@@ -1,0 +1,64 @@
+WebBench 0.9.0 · Green Shoe Garage
+Universal Mac app and source repository · macOS 15 or later
+
+OPEN WEBBENCH
+Extract the ZIP in Finder, open the WebBench folder and double-click
+WebBench.app. It is the universal v0.9.0 developer preview for Apple silicon
+and Intel. You can also copy it to Applications. If macOS declines the
+ad-hoc signed preview, use the local build instructions below.
+It starts with an empty page and the Insert palette. Command-N makes another
+free canvas. File > New Studio Portfolio opens a designed page with an embedded
+field-recorder photograph that you can replace.
+
+BUILD A SECTION AND TRY LAYERS
+1. Drag Section from Insert onto the blank page. Drag Button onto the middle
+   of the section. Check the destination label, then release. Double-click
+   the button text to rename it. Press Escape to finish.
+2. In Layers, select the section. Choose Add inside > Layout > Container.
+   Select the new container and choose Add inside > Text & lists > Disclosure.
+   This also works with empty or covered containers in existing sites.
+3. Drag the button row onto the highlighted middle of Container to nest it.
+   Drag to the top or bottom edge of Disclosure to change their order. Try
+   Option-Command-Up/Down to reorder, Right to nest, or Left to move out.
+   Inspect Diff, undo with Command-Z, then redo with Shift-Command-Z.
+4. Switch to Insert. Search for grid, nav, audio, table or range. To overlap
+   objects at page level on a free page, choose Page canvas above the palette.
+   Switch back to Container to target the nearest compatible layout again.
+5. Save, reopen, and inspect the tree. Choose Phone, Tablet or Desktop to
+   check the layout. Export snapshot > Website folder, then open index.html
+   independently in Safari. Current HTML file exports a single-file page.
+
+TRY THE PHOTO TOOLS
+Drop a large JPEG, HEIC, PNG or TIFF from Finder onto the canvas. WebBench
+offers a resized copy. For a quick edit, try 1280 px, Warm and a Mat border.
+Compare Original and Edited, then choose Resize and insert. Cancel leaves
+the page untouched. The original photo stays on disk.
+
+For a photo already on the page, select it and choose Edit photo… in the
+toolbar or Inspector > Style. In Crop, draw a rectangle on the original.
+Choose Edited to check the result and Apply to photo. Command-Z restores
+the previous image. You can try this on the Studio Portfolio photograph.
+
+SAVE, UNDO AND OPEN EXISTING WORK
+Command-Z and Shift-Command-Z undo and redo source edits across views.
+Command-S saves the working project. A new free canvas has a real draft file
+under ~/Library/Application Support/Green Shoe Garage/WebBench/Drafts. File > Show Project in Finder
+reveals it. Use Command-O to open your own page or site folder. Existing
+flow, flex and grid layouts use their original source and placement rules.
+
+BUILD FROM SOURCE
+Select the installed Xcode in Xcode > Settings > Locations > Command Line
+Tools if xcodebuild cannot find the macOS SDK. In Terminal, the equivalent command is
+
+    bash Build-WebBench.command
+
+The script builds the shared scheme, signs that local app and reveals it in
+Finder. Logs are under build/local.*/build.log.
+
+CHECK ON A MAC
+File > Run Sample Checks… exercises thirteen groups using disposable files.
+Group 13 inserts into nested flex, moves a layer into an empty container,
+undoes and redoes, adds a disclosure, saves and reopens. The checks window
+can also open the Field Instrument in Safari and record your observation.
+Physical Mac input, native launch and independent Safari verification are
+pending for this build. See docs/ACCEPTANCE.md and docs/VALIDATION.md.

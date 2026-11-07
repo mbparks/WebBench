@@ -1,0 +1,17 @@
+# Milestones
+
+| Version | Deliverable | Exit condition |
+|---|---|---|
+| 0.1.0 developer preview | Source-preserving editing, native workspace, bounded offline Edit/Run, responsive CSS editing, fixtures and conflict recovery | Universal preview binary, reproducible Xcode project and recorded portable test evidence |
+| 0.2.0 developer preview | One-click sample projects, five in-app Mac checks, saved Safari instrument and local reports, focused source and recovery fixes | Implementation packaged. Collect native reports on Apple silicon and Intel, confirm Safari output, and exercise physical dragging and the conflict dialog. |
+| 0.3.0 developer preview | Write directly on the rendered page, format text, split or join paragraphs, insert at the caret, retain native undo and inspect exact changes. | Universal build with portable regression evidence. Run the sixth in-app check and manual input checklist on macOS. |
+| 0.4.0 developer preview | Pages/Layers canvas workspace, click placement, live dragging, guides, resizing, device previews and contextual Style/Arrange controls. | Source and storage checks packaged. Run the seventh sample check and physical gesture checklist on macOS. |
+| 0.5.0 developer preview | Visible drag palette, direct flow reordering, editable practice canvas, multi-select, align, distribute, move and delete. | Universal build with source, input-handler and disk checks. Mac gesture acceptance is pending. |
+| 0.6.0 developer preview | Full-page placement from a blank sheet, eight-way live resize, type and color controls, screen dimensions, scoped device geometry, an editable studio portfolio and upload-ready snapshot export. | Portable gesture, source, storage and export checks, universal executable and tenth native sample group delivered. |
+| 0.7.0 developer preview | Persistent Inspector, document and element background controls, pixel favicon editor, image import, PNG and multi-size ICO export. | Source, pixel, disk and ICO decoder checks delivered. Native sidebar interaction and Safari icon display remain pending. |
+| 0.8.0 developer preview | Resize oversized photos on import, edit photos in place, compare filter and border treatments, and save portable copies. | Portable pixel, drop, large-file and export checks delivered. Native photo acceptance is pending. |
+| 0.9.0 developer preview | Insert inside existing and empty containers, reorder or nest Layers by drag or keyboard, and search 56 Insert choices. | Rendered Chromium checks, production Swift destination tests, exact disk round trips and universal bundle checks. Native pointer acceptance is pending. |
+| Next milestone | Complete an end-to-end editing session on macOS with a mouse and trackpad. | Run all thirteen sample groups. Verify physical Layers drops, keyboard focus, imagery and media playback, then save, reopen and compare phone, tablet and desktop layouts in Safari. |
+| Writing improvements | Multi-paragraph selections, richer lists and table row and column commands. | Complete a keyboard-only authoring session and preserve unrelated markup. |
+| Subsequent previews | Extend FigCraft and CSS fixtures, Grid placement, delegated JavaScript handlers and runtime source navigation. | Verify real project exports and narrow source diffs. |
+| 1.0 | Distribution candidate | Complete accessibility, large-site, encoding and concurrent-writer checks. Prepare Developer ID signing and notarization when distribution credentials and release scope are supplied. |

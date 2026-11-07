@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Field Instrument · Voltage divider</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { background: #eceee5; color: #1d382c; margin: 0; font: 16px/1.45 system-ui, sans-serif; }
+    main { margin: clamp(20px,8vw,80px) auto; max-width: 580px; padding: 28px; background: #faf9f3; border: 1px solid #b6bcae; border-top: 8px solid #23523f; }
+    h1 { font: 500 38px/1.1 Georgia,serif; margin: 8px 0; }
+    .maker { font: 600 12px ui-monospace,monospace; letter-spacing: .12em; }
+    .inputs { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    label { display: grid; gap: .4rem; font-size: 14px; }
+    input { min-width: 0; width: 100%; padding: 8px; font: inherit; }
+    .actions { display: flex; align-items: center; gap: 14px; margin-top: 22px; }
+    button { background: #24533f; color: white; border: 0; padding: 10px 14px; font: inherit; cursor: pointer; }
+    output { font: 600 20px ui-monospace,monospace; }
+    @media (max-width: 440px) { .inputs { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="maker">GREEN SHOE GARAGE · FIELD INSTRUMENT</p>
+    <h1>Voltage divider</h1>
+    <p>Calculate the unloaded output voltage across R2.</p>
+    <div class="inputs">
+      <label>Supply (V)<input id="vin" type="number" step="any" value="5"></label>
+      <label>R1 (kΩ)<input id="r1" type="number" min="0" step="any" value="10"></label>
+      <label>R2 (kΩ)<input id="r2" type="number" min="0" step="any" value="10"></label>
+    </div>
+    <div class="actions">
+      <button id="calculate" type="button">Calculate</button>
+      <output id="result" aria-live="polite">— V</output>
+    </div>
+  </main>
+  <script>
+    document.getElementById('calculate').addEventListener('click', () => {
+      const [vin, r1, r2] = ['vin', 'r1', 'r2'].map(id => document.getElementById(id).valueAsNumber);
+      const output = document.getElementById('result');
+      if (![vin, r1, r2].every(Number.isFinite) || r1 < 0 || r2 < 0 || r1 + r2 === 0) {
+        output.textContent = 'Check inputs';
+        return;
+      }
+      output.textContent = (vin * r2 / (r1 + r2)).toFixed(3) + ' V';
+      console.info('Divider output', output.textContent);
+    });
+  </script>
+</body>
+</html>

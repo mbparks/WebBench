@@ -1,0 +1,18 @@
+PASS no-op SHA-256 and reopen for all 6 original files
+{
+  "Field-Instrument.html": "3e6af9f3a82be5789e79f5a6a707e21d71ddffdad992870c17cdae47996f7efe",
+  "Site/art/meter.svg": "1f40b269a26f8dc16cbda08cfc645574e974f16136367b6691ecf442500f5f81",
+  "Site/css/bench.css": "a0f6ce1671c1ad601a68df3d611ef6c231d1ea9dc420dcf2c0e7d2c335a69da2",
+  "Site/index.html": "4a288bee9d192df02bb5253c83d253fe2a334f18db069ea05f7794ae1b9dd442",
+  "Site/js/bench.js": "4ac7b88dce063bc9b020d3171c9b8e7d5adfd9e15c72b28c3740ccb4c050f127",
+  "Site/notes.html": "dafeb7811390621296b553a92032cbaf7629d90da8564a3f4e4d1d56ae4cc067"
+}
+PASS document formatting, Return, typing and caret insertion → exact UTF-8 BOM/CRLF save and reopen
+PASS design canvas no-op, object placement, resize, stacking and exact saved/reopened HTML
+PASS two-layer translation preserves exact BOM, CRLF, link, Unicode and comment after disk save/reopen
+PASS blank paper → drop, font, color, live-frame commit, phone positioning → snapshot and byte-exact reopen with original unchanged
+PASS whole-page and button backgrounds plus embedded favicon, exact BOM/CRLF working save and independent snapshot reopen
+PASS visual text edit → exact diff → save → reopen
+PASS exact two-file insertion and mobile CSS diff after save/reopen
+PASS moved object, relative link target, original pointer and ODIN handlers with DOM test double
+PASS saved single-file instrument, generated handler, 25 °C → 77 °F with DOM test double

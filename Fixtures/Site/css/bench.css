@@ -1,0 +1,11 @@
+/* Shared with notes.html. Leave this comment intact. */
+body { font: 16px/1.5 system-ui, sans-serif; background: #f7f5ed; color: #173f2e; }
+main { margin: 2rem; }
+.actions { display: flex; gap: 12px; align-items: center; }
+.control { padding: 6px 12px; margin-top: 4px; }
+#bench { height: 250px; position: relative; margin: 1rem 0; border: 1px dashed #758777; }
+#meter { width: 88px; }
+#meter img { display: block; width: 100%; }
+@media (max-width: 600px) {
+  .control { margin-top: 2px; }
+}

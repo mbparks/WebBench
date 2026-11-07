@@ -1,0 +1,53 @@
+# WebBench user guide
+
+## Work on the page
+
+| To | On the canvas |
+|---|---|
+| Add an object | Drag a tile from Insert. Read the destination label, then release. Select a container and click a compatible tile to append a child. On a free page, choose Page canvas to place overlapping siblings. |
+| Move and size it | Drag the object. Drag an edge to resize one dimension or a corner to resize both. Shift-drag a corner to keep proportions. Option bypasses snapping. Resize also provides a live slider and exact pixel input for each dimension. |
+| Write and style | Double-click words to type. Select words for a typeface, size or text-color change. With an object selected, use the same toolbar to style the object. Element background changes its fill. Page background above the canvas works with no selection. Press Escape or choose Done typing to return to layout. |
+| Arrange layers | Select a covered object in Layers. Command-click positioned siblings to move them together. Align to the first selection or distribute three or more with equal gaps. Arrow keys nudge, Shift-arrow moves 10 px, and Delete removes the selection. |
+| Preview a screen | Choose Phone, Tablet or Desktop. Rotate or click the dimensions for a custom size. Fit shows the device area in the available workspace, while 100% supports panning. The page can scroll inside the viewport. |
+| Adapt placement | On a free page, Move & resize defaults to all widths. Choose Only this breakpoint for a phone, tablet or desktop position or size. The bands are up to 600 CSS px, 601–1024 px and 1025 px or wider. Switching preview sizes alone leaves the source intact. |
+| Test and publish | Click Run to use the site. Choose Export snapshot → Website folder to write the current project into a fresh directory containing index.html. Try it in Safari, then upload its contents. Choose Current HTML file for a single-file app with embedded assets. |
+
+**Page** sets the tab title and minimum height. The object inspector includes exact dimensions, typography, corner radius, layout, stacking and CSS inspection. Source and Diff remain available for precise edits. On a free canvas, dimensions and positions are explicit. Place or resize parts at smaller breakpoints when a desktop composition needs a different arrangement. Installed fonts use CSS fallback families on other machines. A folder project can carry its own linked fonts.
+
+## Build inside containers and rearrange Layers
+
+Drag **Button** into the middle of an existing section or div. The label identifies its parent and the insertion point before you release. Flex rows and grids keep their layout. For an empty, covered or zero-height container, select its **Layers** row and choose **Add inside → Essentials → Button**. You can also select the container, switch to Insert, and click a compatible tile. On a free page, **Container** is the default drop mode. Choose **Page canvas** when you want an independent object over an existing section.
+
+In Layers, drag a row to the top or bottom edge of another row to move it before or after that element. Drop on the highlighted middle of a compatible row to nest it. A moved section carries its contents. With a single layer selected, **Option-Command-Up/Down** changes sibling order. **Option-Command-Right** nests it in the preceding compatible sibling, and **Option-Command-Left** moves it out one level. The same actions are available from the buttons above the tree and its context menu.
+
+Layers changes HTML source order. An existing absolute position, explicit CSS Grid placement, Flex order or z-index can affect where a moved part appears. To let a positioned part participate in its new layout, select it and choose **Inspector → Arrange → Use normal flow**. Check **Diff**, then try Undo and Redo before saving.
+
+**Insert** has 56 searchable choices across Essentials, Layout, Landmarks, Text & lists, Media & data, and Forms. Try a responsive grid, navigation, disclosure, table, captioned figure, audio or video player, dropdown, date field, range slider or progress bar. Search by display name or HTML tag. List items belong in lists, table cells in rows, and options in dropdowns. Select an audio or video element and choose **Choose media file…** in the Inspector. Open a site folder to link large media files by relative path.
+
+## Import and edit photos
+
+Drop a photo from Finder onto the canvas, or place **Image** from Insert and choose a file. In Write, drop it in a paragraph or use **Image…** at the caret. When a photo exceeds the current page’s budget, **Resize photo for this page** opens with a proposed web-sized copy. Compare **Original** and **Edited**, check the resulting dimensions and encoded size, then choose **Resize and insert**. Cancel leaves the page as it was. A web-ready photo that fits can be inserted with its original bytes.
+
+Select an image on the canvas and click **Edit photo…** in the toolbar or **Inspector → Style**. In **Crop**, drag a rectangle or choose a preset. Rotate left or right, mirror, choose a longest edge, and adjust brightness, contrast and saturation. Try Black & white, Sepia, Warm, Cool or Vivid. Borders include Solid, Double line, Mat and Instant print. Set the border color and thickness, then return to **Edited** to preview the finished image. Borders are drawn inside the image so the output dimensions stay predictable.
+
+**Apply to photo** updates the selected image. A site folder gains a portable copy under assets. A single-file page, or a page that sets its own base URL, embeds the result. Other references to the same original keep their image. Use **Diff**, **Undo**, and **Redo** as with other visual changes.
+
+The editor creates a still JPEG or PNG, with a maximum requested longest edge of 4096 px. Automatic format can retain transparency as PNG. JPEG uses white behind transparency. Animated or multi-page inputs use their first frame when edited. WebBench fits the encoded copy to the available room, up to 2 MiB for embedding or 12 MiB for a linked copy. The preview reports the actual dimensions after fitting. The original keeps its metadata and full resolution. For a responsive picture or srcset, WebBench takes you to Code to select the intended source.
+
+## Inspector, backgrounds and favicons
+
+**Inspector** is the right sidebar. It starts open, stays visible while typing, and remembers an explicit show/hide choice across launches. Click **Inspector** or press **Option-Command-I**. From Code the same command opens Split with the Inspector visible. Select a page object for Style, Arrange and Inspect. While typing the panel follows the current text block. Choose **Inspect block layout** to see its geometry and CSS.
+
+**Page background** above the canvas colors the whole document, including the area outside a short body. **Element background** in the formatting bar or the Inspector colors the selected object. Choose a swatch, enter six or eight hex digits, or choose Transparent. If the target has a background image or gradient, the picker offers **Keep background image or gradient**. Applying a solid color overrides the image on that target when this option is off. The editor preserves authored image URLs and gradients in source. An ordinary page or element color change is one document undo.
+
+Use **Favicon** above the canvas or **File → Edit Favicon…**. Draw with Pencil, Erase, Fill and Sample. Create initials in the current ink or import artwork and touch up the pixels. The checkerboard shows transparency. Compare the previews at 16, 32 and 48 pixels. A page with several declared browser icons offers a link selector. Local icons can be opened when their files are in the project. A folder's conventional favicon.ico is also recognized if no icon link is present.
+
+**Apply to page** stages one change for the current HTML page. A single-file project embeds a PNG. Folder projects store a portable PNG under assets and preserve other pages that use the original icon. A page with an explicit base URL uses an embedded PNG so its icon resolves reliably. Touch icons, pinned-tab masks and unselected favicon variants keep their original declarations. **Export → PNG** saves the working grid. **Export → ICO** writes a file with 16, 32 and 48 px images. Imported artwork is rasterized onto the chosen grid. Favicon edits stay in the sheet until applied.
+
+## Projects and source
+
+Command-N creates a writable HTML draft. Command-S saves it and **File → Show Project in Finder** reveals its location. To work on an existing site, open its folder. Linked assets keep their relative paths. Use the single HTML option for a self-contained page. Local dependencies of a standalone file are included in a folder export when you open the enclosing site folder as the project.
+
+Opened sites retain their authored flow, flexbox, grid and positioned containers. Supported visual edits patch source ranges. Conflicting external changes produce recovery copies. Unsupported mappings and incomplete markup can be edited in Code. Edit keeps page scripts inactive. Run loads the working source in a separate WebKit configuration. Preview-only selection handles, grid and interaction state never enter exported markup.
+
+The folder snapshot writes the project's HTML, CSS, scripts, fonts and artwork, plus common public media from the opened site including PDFs, audio, video, captions and feeds. A site with its own index.html keeps that entry. A project without one gains a landing page pointing to the selected page or a byte-identical root entry. Export does not publish to a host.
