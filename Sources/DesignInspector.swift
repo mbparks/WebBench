@@ -5,8 +5,6 @@ struct DesignInspector: View {
   @ObservedObject var model: Session
   let selection: Inspection
   @State private var fields = [String: String]()
-  @State private var ink = Color.black
-  @State private var size = ""
   @State private var radius = ""
 
   private var metrics: [String: Double] {
@@ -14,8 +12,6 @@ struct DesignInspector: View {
   }
   private func restore() {
     fields = metrics.mapValues { String(Int($0.rounded())) }
-    ink = Self.browserColor(selection.ink) ?? .black
-    size = selection.fontSize.replacingOccurrences(of: "px", with: "")
     radius = ""
   }
   static func browserColor(_ string: String) -> Color? {
@@ -26,14 +22,6 @@ struct DesignInspector: View {
     return Color(
       .sRGB, red: values[0] / 255, green: values[1] / 255, blue: values[2] / 255,
       opacity: values.count > 3 ? values[3] : 1)
-  }
-  private func applyColor(_ color: Color, to property: String) {
-    guard let c = NSColor(color).usingColorSpace(.sRGB) else { return }
-    let channels = [c.redComponent, c.greenComponent, c.blueComponent, c.alphaComponent].map {
-      Int(($0 * 255).rounded())
-    }
-    let value = channels.map { String(format: "%02x", $0) }.joined()
-    set(property, "#" + value)
   }
   private func set(_ property: String, _ value: String) {
     model.mutate(
@@ -133,30 +121,29 @@ struct DesignInspector: View {
         }
       } else {
         Text("Appearance").font(.headline)
-        if model.nodes.indices.contains(selection.id), model.nodes[selection.id].tag == "img" {
-          Button("Edit photo…") { model.editSelectedPhoto() }
-        }
-        if model.nodes.indices.contains(selection.id),
-          ["audio", "video"].contains(model.nodes[selection.id].tag)
-        {
-          Button("Choose media file…") { model.chooseMedia(for: selection.id) }
+        if model.nodes.indices.contains(selection.id) {
+          if model.nodes[selection.id].tag == "img" {
+            HStack {
+              Button("Edit photo…") { model.editSelectedPhoto() }
+              Button("Replace…") { model.pickImage(at: selection.id, replace: true) }
+            }
+          } else if ["audio", "video"].contains(model.nodes[selection.id].tag) {
+            Button("Choose media file…") { model.chooseMedia(for: selection.id) }
+          }
         }
         BackgroundControl(model: model, pageWide: false)
-        HStack {
-          ColorPicker("Text", selection: $ink)
-          Spacer()
-          Button("Set ink") { applyColor(ink, to: "color") }
+        PaintControl(title: "Text color", symbol: "textformat", current: selection.ink) {
+          model.styleSelection("color", $0)
         }
         HStack {
           TextField("Corner radius (px)", text: $radius)
+            .onSubmit { applyNumber(radius, property: "border-radius", min: 0) }
           Button("Round") { applyNumber(radius, property: "border-radius", min: 0) }
         }
         Divider()
         Text("Typography").font(.headline)
-        HStack {
-          TextField("Font size (px)", text: $size)
-          Button("Set size") { applyNumber(size, property: "font-size", min: 1) }
-        }
+        FontControl(current: selection.fontFamily ?? "") { model.styleSelection("font-family", $0) }
+        FontSizeControl(current: selection.fontSize) { model.styleSelection("font-size", $0) }
         HStack {
           ForEach(["left", "center", "right"], id: \.self) { align in
             Button {

@@ -8,9 +8,12 @@ struct PaletteTile: NSViewRepresentable {
   let symbol: String
   @ObservedObject var model: Session
 
+  func sizeThatFits(_ proposal: ProposedViewSize, nsView: Tile, context: Context) -> CGSize? {
+    CGSize(width: proposal.width ?? 90, height: proposal.height ?? 63)
+  }
   func makeNSView(context: Context) -> Tile {
     let tile = Tile(title: title, target: nil, action: nil)
-    tile.bezelStyle = .rounded
+    tile.isBordered = false
     tile.imagePosition = .imageLeading
     tile.alignment = .left
     tile.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
@@ -36,6 +39,15 @@ struct PaletteTile: NSViewRepresentable {
   }
 
   final class Tile: NSButton {
+    override func draw(_ dirtyRect: NSRect) {
+      // PartCard draws the face. Retain a visible keyboard focus ring on the native control.
+      if window?.firstResponder === self {
+        NSColor.keyboardFocusIndicatorColor.setStroke()
+        let ring = NSBezierPath(roundedRect: bounds.insetBy(dx: 2, dy: 2), xRadius: 6, yRadius: 6)
+        ring.lineWidth = 2
+        ring.stroke()
+      }
+    }
     weak var model: Session?
     var item = ""
     private var down: NSPoint?
@@ -43,8 +55,10 @@ struct PaletteTile: NSViewRepresentable {
     private weak var canvas: Canvas.Coordinator?
     private var monitor: Any?
     var insertionParent: ElementRow? {
-      guard let model, !model.dropOnPage, let parent = model.selectedContainer, parent.tag != "body",
-        let entry = model.elements.first(where: { $0.id == item }), model.accepts(entry.tag, in: parent)
+      guard let model, !model.dropOnPage, let parent = model.selectedContainer,
+        parent.tag != "body",
+        let entry = model.elements.first(where: { $0.id == item }),
+        model.accepts(entry.tag, in: parent)
       else { return nil }
       return parent
     }

@@ -29,8 +29,8 @@ struct Inspection: Decodable {
   let canMove: Bool, x: Double, y: Double, display: String, attributes: [String: String]
 }
 enum Resources {
-  static func string(_ name: String, _ ext: String) throws -> String {
-    guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
+  static func string(_ name: String, _ ext: String, in directory: String? = nil) throws -> String {
+    guard let url = Bundle.main.url(forResource: name, withExtension: ext, subdirectory: directory) else {
       throw BenchError("Missing bundled resource: " + name + "." + ext)
     }
     return try String(contentsOf: url, encoding: .utf8)
@@ -41,6 +41,7 @@ final class Engine {
   private let api: JSValue
   init() throws {
     context.evaluateScript(try Resources.string("source", "js"))
+    context.evaluateScript(try Resources.string("workflows", "js"))
     guard let api = context.evaluateScript("WebBench"), !api.isUndefined else {
       throw BenchError("Source engine failed to load.")
     }

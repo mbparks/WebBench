@@ -4,6 +4,19 @@ struct ElementRow: Identifiable, Decodable {
   let id: Int, parent: Int, depth: Int, tag: String, label: String, name: String, start: Int,
     length: Int
 }
+extension ElementRow {
+  static func visible(_ rows: [ElementRow], folding folded: Set<Int>) -> [ElementRow] {
+    guard !folded.isEmpty else { return rows }
+    var result = [ElementRow]()
+    var foldedDepth: Int?
+    for row in rows {
+      if let depth = foldedDepth, row.depth > depth { continue }
+      result.append(row)
+      foldedDepth = folded.contains(row.id) ? row.depth : nil
+    }
+    return result
+  }
+}
 enum LayerZone: String { case before, inside, after }
 enum LayerStep: String, CaseIterable {
   case up = "Move up"

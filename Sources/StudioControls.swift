@@ -6,125 +6,113 @@ struct StudioControls: View {
   @State private var customDevice = false
   @State private var widthText = ""
   @State private var heightText = ""
-  private var canStyle: Bool {
-    model.selected != nil && model.groupIDs.isEmpty && model.safeToEdit
-  }
-  private var family: String {
-    model.writing ? model.writingFormat.fontFamily : model.inspection?.fontFamily ?? ""
-  }
-  private var typeSize: String {
-    model.writing ? model.writingFormat.fontSize : model.inspection?.fontSize ?? ""
-  }
+  private let presets = [
+    ("Phone", "iphone", 390, 844), ("Tablet", "ipad", 820, 1180),
+    ("Desktop", "desktopcomputer", 1280, 800),
+  ]
   var body: some View {
-    VStack(spacing: 0) {
-      HStack(spacing: 9) {
-        ForEach(
-          [
-            ("Phone", "iphone", 390, 844), ("Tablet", "ipad", 820, 1180),
-            ("Desktop", "desktopcomputer", 1280, 800),
-          ], id: \.0
-        ) { kind in
-          Button {
-            model.useDevice(kind.0, Double(kind.2), Double(kind.3))
-          } label: {
-            Label(kind.0, systemImage: kind.1)
-          }.buttonStyle(.bordered).tint(model.device == kind.0 ? .accentColor : nil)
-            .accessibilityValue(model.device == kind.0 ? "Selected" : "")
-        }
+    ViewThatFits(in: .horizontal) {
+      controls(compact: false)
+      controls(compact: true)
+    }.padding(.horizontal, 8).frame(maxWidth: .infinity).frame(height: 35)
+      .background(StudioInk.paper)
+      .popover(isPresented: $customDevice) { dimensions }
+  }
+  private func controls(compact: Bool) -> some View {
+    HStack(spacing: compact ? 5 : 9) {
+      if compact {
+        Menu {
+          ForEach(presets, id: \.0) { kind in
+            Button {
+              model.useDevice(kind.0, Double(kind.2), Double(kind.3))
+            } label: {
+              Label(kind.0, systemImage: kind.1)
+            }
+          }
+          Button("Rotate preview") {
+            model.useDevice(model.device, model.deviceHeight, model.width)
+          }
+        } label: {
+          Image(systemName: presets.first { $0.0 == model.device }?.1 ?? "display")
+        }.fixedSize().accessibilityLabel("Preview device: " + model.device)
+      } else {
+        HStack(spacing: 2) {
+          ForEach(presets, id: \.0) { kind in
+            Button {
+              model.useDevice(kind.0, Double(kind.2), Double(kind.3))
+            } label: {
+              Label(kind.0, systemImage: kind.1)
+                .font(.caption.weight(.semibold)).padding(.horizontal, 6).frame(height: 23)
+                .background(
+                  model.device == kind.0 ? StudioInk.green.opacity(0.15) : .clear,
+                  in: RoundedRectangle(cornerRadius: 5))
+            }.buttonStyle(.plain).accessibilityValue(model.device == kind.0 ? "Selected" : "")
+          }
+        }.fixedSize()
         Button {
           model.useDevice(model.device, model.deviceHeight, model.width)
         } label: {
           Image(systemName: "rotate.right")
-        }.help("Rotate the preview").accessibilityLabel("Rotate preview")
-        Button("\(Int(model.width)) × \(Int(model.deviceHeight))") {
-          widthText = String(Int(model.width))
-          heightText = String(Int(model.deviceHeight))
-          customDevice = true
-        }.monospacedDigit().popover(isPresented: $customDevice) {
-          VStack(alignment: .leading, spacing: 10) {
-            Text("Preview dimensions").font(.headline)
-            HStack {
-              Text("Width")
-              TextField("px", text: $widthText)
-            }
-            HStack {
-              Text("Height")
-              TextField("px", text: $heightText)
-            }
-            Slider(
-              value: Binding(
-                get: { model.width },
-                set: {
-                  model.useDevice("Custom", $0, model.deviceHeight)
-                  widthText = String(Int($0))
-                }), in: 240...2560, step: 1
-            )
-            .accessibilityLabel("Adjust viewport width")
-            Button("Apply") {
-              guard let w = Int(widthText), let h = Int(heightText), (240...4096).contains(w),
-                (240...4096).contains(h)
-              else {
-                model.status = "Enter dimensions between 240 and 4096 CSS pixels."
-                return
-              }
-              model.useDevice("Custom", Double(w), Double(h))
-              customDevice = false
-            }.keyboardShortcut(.defaultAction)
-          }.padding(14).frame(width: 245)
-        }.help("Custom device dimensions in CSS pixels")
-        if model.hasFreePage && !model.running && !model.writing {
-          Menu(model.devicePlacement ? "Move & resize: " + model.band : "Move & resize: all widths")
-          {
-            Button("At all widths") { model.devicePlacement = false }
-            Button("Only this breakpoint") { model.devicePlacement = true }
-          }.fixedSize().help("Phone up to 600 px, tablet 601–1024 px, desktop from 1025 px.")
-        }
-        Spacer()
-        Picker("Magnification", selection: $model.zoom) {
-          ForEach(["Fit", "50%", "75%", "100%", "150%"], id: \.self) { Text($0).tag($0) }
-        }.labelsHidden().fixedSize().help("Canvas magnification")
-      }.controlSize(.small).padding(.horizontal, 12).frame(height: 33)
-      if !model.running {
-        Divider()
-        HStack(spacing: 8) {
-          FontControl(current: family) { model.styleSelection("font-family", $0) }
-            .disabled(!canStyle)
-          FontSizeControl(current: typeSize) { model.styleSelection("font-size", $0) }
-            .disabled(!canStyle)
-          PaintControl(
-            title: "Text color", symbol: "textformat",
-            current: model.writing ? model.writingFormat.ink : model.inspection?.ink ?? ""
-          ) {
-            model.styleSelection("color", $0)
-          }.disabled(!canStyle)
-          BackgroundControl(model: model, pageWide: false)
-          Divider().frame(height: 17)
-          Button {
-            model.openSizeControls()
-          } label: {
-            Label("Resize", systemImage: "arrow.up.left.and.arrow.down.right")
-          }
-          .disabled(!canStyle)
-          .popover(isPresented: $model.showSize) {
-            SizePanel(model: model).padding(14).frame(width: 285)
-          }
-          if !model.writing, let id = model.selected, model.nodes.indices.contains(id),
-            model.nodes[id].tag == "img"
-          {
-            Button("Edit photo…") { model.editSelectedPhoto() }
-            Menu {
-              Button("Replace image…") { model.pickImage(at: id, replace: true) }
-            } label: {
-              Image(systemName: "ellipsis.circle")
-            }.accessibilityLabel("Image actions")
-          }
-          Spacer()
-          if !canStyle {
-            Text("Select an object to style it").font(.caption).foregroundStyle(.secondary)
-          }
-        }.controlSize(.small).padding(.horizontal, 12).frame(height: 36)
+        }.buttonStyle(.borderless).help("Rotate preview").accessibilityLabel("Rotate preview")
       }
-    }.background(Color(nsColor: .controlBackgroundColor))
+      Button("\(Int(model.width)) × \(Int(model.deviceHeight))") {
+        widthText = String(Int(model.width))
+        heightText = String(Int(model.deviceHeight))
+        customDevice = true
+      }.fixedSize().font(.caption.monospacedDigit()).help("Set or scrub the preview width")
+      Spacer(minLength: 0)
+      if model.hasFreePage && !model.running && !model.writing {
+        Menu {
+          Button("At all widths") { model.devicePlacement = false }
+          Button("Only this breakpoint") { model.devicePlacement = true }
+        } label: {
+          if compact {
+            Image(
+              systemName: model.devicePlacement
+                ? "rectangle.inset.filled" : "rectangle.expand.vertical")
+          } else {
+            Text(model.devicePlacement ? model.band.capitalized + " only" : "All widths")
+          }
+        }.fixedSize().accessibilityLabel("Move and resize scope").accessibilityValue(
+          model.devicePlacement ? model.band : "All widths"
+        )
+        .help("Apply moves and resizes to all widths or this breakpoint")
+      }
+      Picker("Zoom", selection: $model.zoom) {
+        ForEach(["Fit", "50%", "75%", "100%", "150%"], id: \.self) { Text($0).tag($0) }
+      }.labelsHidden().fixedSize().help("Canvas magnification")
+    }.controlSize(.small)
+  }
+  private var dimensions: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Text("Preview dimensions").font(.headline)
+      HStack {
+        Text("Width")
+        TextField("px", text: $widthText)
+      }
+      HStack {
+        Text("Height")
+        TextField("px", text: $heightText)
+      }
+      Slider(
+        value: Binding(
+          get: { model.width },
+          set: { n in
+            model.useDevice("Custom", n, model.deviceHeight)
+            widthText = String(Int(n))
+          }), in: 240...4096, step: 1
+      ).accessibilityLabel("Adjust viewport width")
+      Button("Apply") {
+        guard let w = Int(widthText), let h = Int(heightText), (240...4096).contains(w),
+          (240...4096).contains(h)
+        else {
+          model.status = "Enter dimensions between 240 and 4096 CSS pixels."
+          return
+        }
+        model.useDevice("Custom", Double(w), Double(h))
+        customDevice = false
+      }.keyboardShortcut(.defaultAction)
+    }.padding(14).frame(width: 245)
   }
 }
 
@@ -329,7 +317,7 @@ extension View {
   }
 }
 
-private struct SizePanel: View {
+struct SizePanel: View {
   @ObservedObject var model: Session
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
@@ -446,6 +434,12 @@ struct PageControls: View {
     .controlSize(.small).popover(isPresented: $open) {
       VStack(alignment: .leading, spacing: 10) {
         Text("Page settings").font(.headline)
+        BackgroundControl(model: model, pageWide: true)
+        Button("Edit favicon…") {
+          open = false
+          model.openFavicon()
+        }
+        Divider()
         TextField("Window title", text: $title)
         Button("Set title") {
           if let id = bodyID {

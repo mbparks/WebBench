@@ -15,7 +15,7 @@ Copy both fixtures and make a hash list.
     cd "$TMPDIR/WebBenchAcceptance"
     find . -type f -exec shasum -a 256 {} \; | LC_ALL=C sort > ../WebBench-before.txt
 
-Open Field-Instrument.html in WebBench. Save, reopen and save. Repeat with the **Site folder**. Run the same find command with output redirected to ../WebBench-after.txt and compare the lists with diff. Expect identical hashes for all six originals. Next change only the Site heading in Write, or using Set text under the inspector’s Inspect tab, inspect Diff, save and reopen. Expect only its text to change.
+Open Field-Instrument.html in WebBench. Save, reopen and save. Repeat with the **Site folder**. Run the same find command with output redirected to ../WebBench-after.txt and compare the lists with diff. Expect identical hashes for all original fixture files. Next change only the Site heading in Write, or using Set text under the inspector’s Inspect tab, inspect Diff, save and reopen. Expect only its text to change.
 
 ## 2. Flex insertion, breakpoint and undo
 
@@ -25,7 +25,7 @@ Inspect the two-file diff. Undo twice and check the canvas and source after each
 
 ## 3. Build and run a single-file instrument
 
-Choose Project → New blank page…, finish typing, and select section.layout. From the element palette, add Number input, Button and Output. In Inspect, set their IDs to reading, convert and result. Select the button and choose Find or create click handler. Replace the selected comment with this code.
+Open the WebBench project menu and choose New blank page…, finish typing, and select section.layout. From the element palette, add Number input, Button and Output. In Inspect, set their IDs to reading, convert and result. Select the button and choose Find or create click handler. Replace the selected comment with this code.
 
     const c = document.getElementById('reading').valueAsNumber;
     document.getElementById('result').textContent = String(c * 9 / 5 + 32);
@@ -42,7 +42,7 @@ Open the copied Site, choose css/bench.css in Files and add a local comment in C
 
 ## 6. Write like a document
 
-1. Choose Project → New blank page…. Type in the empty paragraph, split it with Return, then insert a soft break with Shift-Return. With a Japanese or Chinese input source, commit a composition and cancel a second one. Inspect Diff for dropped or duplicated characters.
+1. Open the WebBench project menu and choose New blank page…. Type in the empty paragraph, split it with Return, then insert a soft break with Shift-Return. With a Japanese or Chinese input source, commit a composition and cancel a second one. Inspect Diff for dropped or duplicated characters.
 2. Select a word and use Command-B. Use the italic toolbar button, then Command-K. Give the words a relative link. Paste two lines from another app. Inspect the paragraphs and selected text in Split.
 3. From inside a paragraph, use Insert to add a button. Type its label. Add a table, replace the selected first cell, and use Tab to reach the next one. Import an SVG at a caret. In a folder project, check the relative path and the staged image in the canvas before saving. In a single file, check the embedded image.
 4. Undo and redo. Save immediately after typing. Repeat after switching to Code, Run and Select. Close with unsaved text and verify the save prompt. Open the saved HTML independently in Safari.
@@ -72,7 +72,7 @@ Command-click three positioned siblings of different sizes. Align their top edge
 2. Select a part and drag each edge and corner. Check the rendered part changes while the mouse is held. With the northwest grip dragged, the opposite corner should stay anchored. Shift-drag a corner on a photo. Try the Resize sliders and a precise width. Escape during a drag should restore the original frame. Check one undo and redo per released gesture.
 3. Double-click the heading and type. Change the typeface and Text color of one word. Press Escape. Change a button's typeface, Fill and size. In Diff confirm the remaining text and elements keep their existing source.
 4. Switch among Phone (390 × 844), Tablet (820 × 1180), Desktop (1280 × 800), rotated and custom sizes. Preview alone should leave Diff unchanged. At Phone choose Only this breakpoint and move or resize the button. Switch to Desktop and verify its original position, then return to Phone and check the new one.
-5. Export snapshot → Website folder with unsaved changes. Open its index.html in Safari and compare all three viewport widths. Test text, links and controls. Reopen the exported folder in WebBench. Compare the working original and confirm the export left it untouched.
+5. Export → Website folder with unsaved changes. Open its index.html in Safari and compare all three viewport widths. Test text, links and controls. Reopen the exported folder in WebBench. Compare the working original and confirm the export left it untouched.
 6. Open File → New Studio Portfolio. Move the photo, replace it with local artwork, change the heading, export Current HTML file and reopen it in Safari offline. Repeat the physical drag and resize with a trackpad at Fit and 100%.
 
 ## 11. Inspector, page colors and browser icons
@@ -97,3 +97,17 @@ Command-click three positioned siblings of different sizes. Align their top edge
 3. Use the top edge, center highlight and bottom edge of target rows to move a layer before, inside and after. Move a whole section with its descendants. Repeat with Option-Command-Up, Down, Right and Left. Verify both the native tree and the source. Cancel a drag and check the diff.
 4. Move an absolutely positioned layer into a flex row. Use Arrange → Use normal flow to see the parent place it. On the free canvas, choose Page canvas for an overlapping object, then switch back to Container. Undo and redo each change. Save, reopen and compare the hierarchy and links in Safari.
 5. Add a table row to a table body and a cell to a row, a list item to an ordered list and an option to a dropdown. Add a local audio or video file in the Inspector. Test playback and seeking in Run and in the exported site. Repeat the Layers drops with a mouse and a trackpad at Fit and 100%.
+
+## Workspace refresh on macOS
+
+1. In light and dark appearance, open a new free canvas at the minimum window size, then expand the window. Confirm the Parts drawer, Inspector and device dock remain usable. Make a fresh draft and ensure a save without edits contains no guide or editor decoration.
+2. Collapse Layout, search for Grid and drag the card into a section. Clear search and check the tray returns to its previous state. Try Tab and Space on a palette card. Drag a card with a mouse and trackpad and press Escape before releasing.
+3. Select an image, edit its photo or size, then select text and change its typeface. Try editing text with the Inspector open and closed. Fold a parent layer and select a child on the page to reveal its row. Use Option-Command arrows with Layers active and inspect the source diff.
+4. Open Code, edit a project file, return to Design, switch device or rotate and open the width popover. Preview the page, produce a console error, stop preview and check the working source. Save, reopen and compare the result in Safari.
+
+
+## Visual interaction authoring
+
+Choose **File → Try Interaction Example**. Change the readout text, add **Open a dialog**, and choose **Apply & preview**. Press **Test signal**, dismiss the dialog, then try the download button. Stop, inspect the diff, undo the complete edit, redo, save and reopen. Check the saved page in Safari.
+
+In a separate disposable site, select a button, open **Interactions**, use **Pick** on the canvas and add an upload step followed by a text change. In Preview, cancel once and verify the readout stays put. Repeat with a disposable file and **Test upload**. Open an exported copy against a local HTTP test receiver, confirm the field name and bytes, and try one failed request followed by a retry. Record both the in-app and independent Safari outcomes.

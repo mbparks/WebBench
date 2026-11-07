@@ -8,6 +8,10 @@
 		<data>
 		kRjFggme18Ru1pkt03PaLVseidk=
 		</data>
+		<key>Resources/Fixtures/Signal-check.html</key>
+		<data>
+		Pt47twdZJPTM5hLdY+LW7ew8rsw=
+		</data>
 		<key>Resources/Fixtures/Site/art/meter.svg</key>
 		<data>
 		ev0d2PIzk3Spzg+oBbi5F7ooZ0g=
@@ -54,7 +58,7 @@
 		</data>
 		<key>Resources/canvas.js</key>
 		<data>
-		ewkRNKI/n9HjmaJevXgdf092YDE=
+		yR1t8WPHN9vRYp3GBgJ1yksNdiQ=
 		</data>
 		<key>Resources/console.js</key>
 		<data>
@@ -70,7 +74,7 @@
 		</data>
 		<key>Resources/layout-drop.js</key>
 		<data>
-		wxj6osO9ZR8+bMeHkf8RfPIA4ls=
+		5DQKx7DSRZ18DLZoxJwKGwNSA2A=
 		</data>
 		<key>Resources/source.js</key>
 		<data>
@@ -79,6 +83,10 @@
 		<key>Resources/studio.html</key>
 		<data>
 		MThusBgDLk5laEiIrWsboowbQcU=
+		</data>
+		<key>Resources/workflows.js</key>
+		<data>
+		GWY2G8FIzEzQT/kq5FPKjGCO/ek=
 		</data>
 		<key>Resources/writing.js</key>
 		<data>
@@ -92,6 +100,13 @@
 			<key>hash2</key>
 			<data>
 			Pmr586gr5XieefWmpwfiHXHd/9rZkocMF82uR5lvfv4=
+			</data>
+		</dict>
+		<key>Resources/Fixtures/Signal-check.html</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			NhOMTIbVRsS0HoSQvdtJj+gPxDrqIv5dch4m1F9skAw=
 			</data>
 		</dict>
 		<key>Resources/Fixtures/Site/art/meter.svg</key>
@@ -175,7 +190,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			6V1CJcOGCgL/Cf5UlePXI5ANNnNTun9wUghs/STBqIs=
+			fGYLAbRUtXcXf4yhVeo76CQUPzDNMRbrC2c3xH8QqOk=
 			</data>
 		</dict>
 		<key>Resources/console.js</key>
@@ -203,7 +218,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			BklThqW/s4JZSWPqYIH9iWKjVZY7BmEbO2KnpjlQgv8=
+			dY+LhvQXoj93yG0nfgfVClFnVTfOEignrxx6fXpsQP0=
 			</data>
 		</dict>
 		<key>Resources/source.js</key>
@@ -218,6 +233,13 @@
 			<key>hash2</key>
 			<data>
 			RLeUkxS8VAbJoeDA7XQZ5Omeniu6ybljwaabOMSMLHo=
+			</data>
+		</dict>
+		<key>Resources/workflows.js</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+ecCFwD8a9Ks1KdWxTmqGN9eB1P/dyd+XyoP7pWTZS0=
 			</data>
 		</dict>
 		<key>Resources/writing.js</key>

@@ -19,6 +19,12 @@ final class LayerTests: XCTestCase {
         "*": ["body", "section", "div", "aside", "li"], "body": [], "li": ["ul", "ol"],
       ])
   }
+  func testFoldingLayersPreservesSiblingOrderAndRevealsOnlyVisibleChildren() {
+    let nodes = order.nodes
+    XCTAssertEqual(ElementRow.visible(nodes, folding: [2, 5]).map(\.id), [0, 1, 2, 4, 5])
+    XCTAssertEqual(ElementRow.visible(nodes, folding: [1, 2]).map(\.id), [0, 1, 5, 6, 7, 8])
+    XCTAssertEqual(ElementRow.visible(nodes, folding: []).map(\.id), nodes.map(\.id))
+  }
   func testThreeDropZonesAtNestedContainer() {
     XCTAssertEqual(order.slot(for: 4, at: 5, zone: .before), LayerSlot(parent: 0, before: 5))
     XCTAssertEqual(order.slot(for: 4, at: 5, zone: .inside), LayerSlot(parent: 5, before: nil))

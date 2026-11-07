@@ -18,6 +18,38 @@ final class WebBenchMacTests: XCTestCase {
     model.choosePage(path)
     return model
   }
+  func testInteractionsPickApplyUndoReopenAndRemove() throws {
+    let original = "<html><head></head><body><button>Test</button><p>Standby</p></body></html>"
+    let model = session(original)
+    let button = try XCTUnwrap(model.nodes.first { $0.tag == "button" })
+    let target = try XCTUnwrap(model.nodes.first { $0.tag == "p" })
+    model.select(button.id)
+    model.openInteractions()
+    let draft = try XCTUnwrap(model.workflow)
+    XCTAssertEqual(draft.trigger, button.id)
+    draft.pick(target.id, for: .target(draft.steps[0].id))
+    draft.steps[0].value = "Acquired"
+    XCTAssertEqual(model.currentText, original)
+    model.finishInteraction(draft)
+    XCTAssertNil(model.workflow)
+    let edited = model.currentText
+    XCTAssertTrue(edited.contains("Acquired"))
+    model.undo()
+    XCTAssertEqual(model.currentText, original)
+    model.redo()
+    XCTAssertEqual(model.currentText, edited)
+    model.select(button.id)
+    model.openInteractions()
+    let reopened = try XCTUnwrap(model.workflow)
+    XCTAssertTrue(reopened.existing)
+    XCTAssertEqual(reopened.steps[0].target, target.id)
+    XCTAssertFalse(reopened.dirty)
+    model.finishInteraction(reopened, remove: true)
+    XCTAssertFalse(model.currentText.contains("data-webbench-workflow"))
+    model.undo()
+    XCTAssertEqual(model.currentText, edited)
+  }
+
   func testVisualAndCodeChangesShareNativeHistory() throws {
     let original = "<html><head></head><body><main><p>Readout</p></main></body></html>"
     let m = session(original)

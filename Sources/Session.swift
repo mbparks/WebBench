@@ -18,13 +18,19 @@ final class Session: ObservableObject {
   @Published var site: Site?
   @Published var page = ""
   @Published var file = ""
+  private var designPanel = "Insert"
   @Published var mode = Mode.design {
     didSet {
-      if mode == .code {
+      if mode == .code && oldValue != .code {
+        designPanel = sidebarTab
+        sidebarTab = "Files"
         insertTool = ""
         groupIDs = []
       }
-      if oldValue == .code && mode != .code && site != nil { render() }
+      if oldValue == .code && mode != .code {
+        if sidebarTab == "Files" { sidebarTab = designPanel }
+        if site != nil { render() }
+      }
     }
   }
   struct WritingFormat: Equatable {
@@ -159,7 +165,8 @@ final class Session: ObservableObject {
   func newStudioDraft(_ template: String = "canvas-page") {
     guard mayLeave() else { return }
     do {
-      let data = Data(try Resources.string(template, "html").utf8)
+      let isInteractionExample = template == "Signal-check"
+      let data = Data(try Resources.string(template, "html", in: isInteractionExample ? "Fixtures" : nil).utf8)
       let dir = Self.supportDirectory.appendingPathComponent("Drafts").appendingPathComponent(
         UUID().uuidString)
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -170,7 +177,12 @@ final class Session: ObservableObject {
       zoom = "Fit"
       useDevice("Desktop", 1280, 800)
       use(try Site.open(url))
-      status = "Drag a part onto the page. Double-click its text to type."
+      if isInteractionExample, let test = nodes.first(where: { $0.label == "button#test" }) {
+        select(test.id)
+        openInteractions()
+      } else {
+        status = "Drag a part onto the page. Double-click its text to type."
+      }
     } catch { alert(error.localizedDescription) }
   }
   func exportSnapshot(folder: Bool) {
@@ -242,6 +254,7 @@ final class Session: ObservableObject {
   }
   @Published var paperColor = ""
   @Published var paperHasImage = false
+  @Published var workflow: InteractionDraft?
   @Published var photoEditor: PhotoJob?
   @Published var iconEditor: FaviconEdit?
   func paintBackground(pageWide: Bool, color: String, keepImage: Bool) {
@@ -318,6 +331,7 @@ final class Session: ObservableObject {
       NSSound.beep()
       return false
     }
+    guard discardInteractionEdits() else { return false }
     guard changed else { return true }
     let a = NSAlert()
     a.messageText = "Keep your WebBench changes?"
@@ -393,6 +407,7 @@ final class Session: ObservableObject {
   }
   func use(_ site: Site) {
     timer?.invalidate()
+    workflow = nil
     self.site = site
     devicePlacement = false
     nextScroll = nil

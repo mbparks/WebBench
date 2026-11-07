@@ -174,6 +174,7 @@ struct Canvas: NSViewRepresentable {
       ? WKWebView(frame: .zero, configuration: config)
       : DesignWebView(frame: .zero, configuration: config)
     web.pageZoom = zoom
+    if state.run { web.uiDelegate = c }
     web.navigationDelegate = c
     c.web = web
     // Block network subresources, even if a WebKit version ignores CSP on custom scheme responses.
@@ -208,10 +209,12 @@ struct Canvas: NSViewRepresentable {
     if coordinator.model.designer === coordinator { coordinator.model.designer = nil }
     coordinator.cancelBarriers()
     view.stopLoading()
+    view.uiDelegate = nil
     view.navigationDelegate = nil
     view.configuration.userContentController.removeAllScriptMessageHandlers()
   }
-  final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+  final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
+    private var flowMode: Bool?
     weak var web: WKWebView?
     let model: Session, state: PreviewState
     var ready = false, last = ""
@@ -382,6 +385,11 @@ struct Canvas: NSViewRepresentable {
         evaluate("webBenchDropOnPage", [pageDrop])
       }
       if state.writing { return }
+      let interactive = model.workflow != nil
+      if flowMode != interactive {
+        flowMode = interactive
+        evaluate("webBenchWorkflowMode", [interactive])
+      }
       let grid = model.gridVisible && model.hasFreePage
       if grid != lastGrid {
         lastGrid = grid
@@ -479,6 +487,15 @@ struct Canvas: NSViewRepresentable {
           }
         }
         sync()
+        return
+      }
+      if let draft = model.workflow {
+        if kind == "workflowPick", model.safeToEdit, let id = d["id"] as? Int, let role = draft.picking {
+          draft.pick(id, for: role)
+          if draft.picking == nil { model.select(id) }
+        } else if kind == "workflowCancelPick" {
+          draft.picking = nil
+        }
         return
       }
       if kind == "paletteDrop" {
@@ -707,6 +724,19 @@ struct Canvas: NSViewRepresentable {
           self.model.selected == nil
         else { return }
         self.model.addPageImage(image, path: self.state.page)
+      }
+    }
+    func webView(
+      _ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters,
+      initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void
+    ) {
+      guard state.run, frame.isMainFrame, model.preview?.token == state.token, let window = webView.window
+      else { completionHandler(nil); return }
+      let panel = NSOpenPanel()
+      panel.canChooseDirectories = false
+      panel.allowsMultipleSelection = parameters.allowsMultipleSelection
+      panel.beginSheetModal(for: window) { response in
+        completionHandler(response == .OK && self.model.preview?.token == self.state.token ? panel.urls : nil)
       }
     }
     func webView(

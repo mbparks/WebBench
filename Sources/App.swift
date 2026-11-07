@@ -109,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     item(file, "New Blank Page…", #selector(blank), "", .command, self)
     item(file, "New Field Instrument…", #selector(instrument), "n", [.command, .shift], self)
     item(file, "Open File or Site Folder…", #selector(open), "o", .command, self)
+    item(file, "Try Interaction Example", #selector(interactionExample), "", .command, self)
     item(file, "Open Sample Workbench…", #selector(sample), "", .command, self)
     item(file, "Show Project in Finder", #selector(showProject), "", .command, self)
     item(file, "Run Sample Checks…", #selector(checkSamples), "", .command, self)
@@ -125,6 +126,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         edit, ["x": "Cut", "c": "Copy", "v": "Paste", "a": "Select All"][k]!,
         NSSelectorFromString(s), k)
     }
+    edit.addItem(.separator())
+    item(edit, "Interactions…", #selector(interactions), "j", [.command, .option], self)
     let view = menu("View")
     for (idx, name) in ["Design", "Code", "Split"].enumerated() {
       item(view, name, #selector(mode(_:)), String(idx + 1), .command, self)
@@ -159,6 +162,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     check.start()
   }
   @objc func siteFolder() { model.afterWriting { self.model.newFolder() } }
+  @objc func interactionExample() { model.afterWriting { self.model.newStudioDraft("Signal-check") } }
+  @objc func interactions() { model.afterWriting { self.model.openInteractions() } }
   @objc func inspector() { model.toggleInspector() }
   @objc func favicon() { model.openFavicon() }
   @objc func freePage() { model.afterWriting { self.model.newStudioDraft() } }
@@ -176,15 +181,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
   @objc func mode(_ sender: NSMenuItem) {
     model.afterWriting { self.model.mode = Mode(rawValue: sender.title) ?? .split }
   }
+  private func layerStep(_ item: NSMenuItem) -> LayerStep? {
+    switch item.keyEquivalent.unicodeScalars.first?.value {
+    case 0xf702: return .outdent
+    case 0xf703: return .indent
+    case 0xf700: return .up
+    case 0xf701: return .down
+    default: return nil
+    }
+  }
+  private var editingLayerOrder: Bool {
+    model.sidebarTab == "Tree" && !model.writing && !model.running && model.mode != .code
+  }
   @objc func move(_ sender: NSMenuItem) {
-    model.nudge(
-      sender.title == "Move Left" ? -1 : sender.title == "Move Right" ? 1 : 0,
-      sender.title == "Move Up" ? -1 : sender.title == "Move Down" ? 1 : 0)
+    guard let step = layerStep(sender) else { return }
+    if editingLayerOrder {
+      if let id = model.selected, let slot = model.slot(for: id, step: step) {
+        model.moveLayer(id, to: slot)
+      }
+    } else {
+      model.nudge(
+        step == .outdent ? -1 : step == .indent ? 1 : 0,
+        step == .up ? -1 : step == .down ? 1 : 0)
+    }
   }
   @objc func earlier() { model.mutate(["kind": "reorder", "step": -1], name: "Move earlier") }
   @objc func later() { model.mutate(["kind": "reorder", "step": 1], name: "Move later") }
   func validateMenuItem(_ item: NSMenuItem) -> Bool {
-    if model.busy { return false }
+    if model.busy || model.workflow != nil { return false }
+    if item.action == #selector(interactions) { return model.site != nil && !model.running }
     if item.action == #selector(undo) {
       item.title = model.history.undoMenuItemTitle
       return model.history.canUndo && !model.running
@@ -193,7 +218,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
       item.title = model.history.redoMenuItemTitle
       return model.history.canRedo && !model.running
     }
-    if item.action == #selector(move(_:)) {
+    if item.action == #selector(move(_:)), let step = layerStep(item) {
+      if editingLayerOrder {
+        item.title = step.rawValue
+        guard let id = model.selected, model.groupIDs.isEmpty else { return false }
+        return model.slot(for: id, step: step) != nil
+      }
+      switch step {
+      case .up: item.title = "Move Up"
+      case .down: item.title = "Move Down"
+      case .indent: item.title = "Move Right"
+      case .outdent: item.title = "Move Left"
+      }
       return (model.inspection?.canMove == true || !model.groupIDs.isEmpty) && model.safeToEdit
     }
     if item.action == #selector(earlier) || item.action == #selector(later) {
@@ -201,7 +237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     return model.site != nil
       || [
-        #selector(checkSamples), #selector(sample), #selector(siteFolder), #selector(blank),
+        #selector(interactionExample), #selector(checkSamples), #selector(sample), #selector(siteFolder), #selector(blank),
         #selector(instrument), #selector(freePage), #selector(portfolio), #selector(board),
         #selector(open),
       ].contains(

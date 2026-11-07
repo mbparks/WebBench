@@ -13,6 +13,9 @@ private let properties = [
 ]
 struct WorkspaceView: View {
   @State private var paletteSearch = ""
+  @State private var expandedTrays: Set<String> = ["Essentials", "Layout"]
+  @State private var consoleOpen = false
+  @State private var folded = Set<Int>()
   @State private var layerDrag: LayerDrag?
   @State private var dropMark: LayerDropMark?
   @ObservedObject var m: Session
@@ -20,18 +23,19 @@ struct WorkspaceView: View {
     VStack(spacing: 0) {
       if m.site == nil {
         welcome
+      } else if let draft = m.workflow {
+        InteractionWorkbench(model: m, draft: draft) { pageSurface }
       } else {
         toolbar
-        if m.mode != .code { StudioControls(model: m) }
         if m.writing && !m.running && m.mode != .code { writingBar }
         Divider()
         HSplitView {
           if !m.running {
-            sidebar.frame(minWidth: 165, idealWidth: 200, maxWidth: 300)
+            sidebar.frame(minWidth: 190, idealWidth: 225, maxWidth: 315)
           }
           editor.frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity)
           if !m.running && m.mode != .code && m.showInspector {
-            Inspector(m: m).frame(minWidth: 215, idealWidth: 248, maxWidth: 330)
+            Inspector(m: m).frame(minWidth: 235, idealWidth: 265, maxWidth: 340)
           }
         }
       }
@@ -42,13 +46,23 @@ struct WorkspaceView: View {
         } else {
           Circle().fill(m.changed ? Color.orange : Color.green).frame(width: 7, height: 7)
         }
-        Text(m.status).lineLimit(2).textSelection(.enabled)
+        Text(m.status).lineLimit(1).help(m.status).textSelection(.enabled)
         Spacer()
         if let site = m.site {
-          Text(m.changed ? "\(site.dirtyPaths.count) unsaved" : "Saved").foregroundStyle(.secondary)
+          Button {
+            m.afterWriting { m.diff() }
+          } label: {
+            Label(
+              m.changed ? "Review changes (" + String(site.dirtyPaths.count) + ")" : "View diff",
+              systemImage: "plus.forwardslash.minus")
+          }.buttonStyle(.borderless).help("Inspect the source diff (⇧⌘D)")
+          Divider().frame(height: 12)
+          Text(m.changed ? "Unsaved" : "Saved").font(.caption.weight(.semibold))
+
         }
       }.font(.caption).padding(.horizontal, 12).frame(minHeight: 27)
     }.disabled(m.busy)
+      .onChange(of: m.preview?.token) { _, _ in folded.removeAll() }
       .sheet(item: $m.photoEditor) { job in PhotoEditor(model: m, job: job) }
       .sheet(item: $m.iconEditor) { edit in FaviconEditor(model: m, edit: edit) }
       .sheet(isPresented: Binding(get: { m.diffText != nil }, set: { if !$0 { m.diffText = nil } }))
@@ -103,42 +117,75 @@ struct WorkspaceView: View {
     }.frame(maxWidth: .infinity, maxHeight: .infinity)
   }
   var toolbar: some View {
-    HStack(spacing: 9) {
+    HStack(spacing: 12) {
       Menu {
         Button("Open file or folder…") { m.afterWriting { m.openPanel() } }
-        Button("Start a free canvas") { m.afterWriting { m.newStudioDraft() } }
-        Button("Studio portfolio template") { m.afterWriting { m.newStudioDraft("studio") } }
+        Button("New free canvas") { m.afterWriting { m.newStudioDraft() } }
+        Button("Try interaction example") { m.afterWriting { m.newStudioDraft("Signal-check") } }
+        Button("New Studio Portfolio") { m.afterWriting { m.newStudioDraft("studio") } }
         Button("New blank page…") { m.afterWriting { m.new("blank") } }
+        Button("New Field Instrument…") { m.afterWriting { m.new("instrument") } }
+        Button("Show project in Finder") { m.showProject() }
       } label: {
-        Label("Project", systemImage: "folder")
-      }.fixedSize().accessibilityLabel("Project")
+        HStack(spacing: 7) {
+          BenchMark()
+          Text("WebBench").font(.system(size: 20, weight: .semibold, design: .serif))
+          Image(systemName: "chevron.down").font(.caption2.bold()).foregroundStyle(StudioInk.lime)
+        }.foregroundStyle(.white)
+      }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .accessibilityLabel("WebBench project menu").help("Open or create a project")
+      Divider().frame(height: 22)
       Picker(
-        "View",
-        selection: Binding(get: { m.mode }, set: { mode in m.afterWriting { m.mode = mode } })
+        "Workspace view",
+        selection: Binding(get: { m.mode }, set: { v in m.afterWriting { m.mode = v } })
       ) {
         ForEach(Mode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-      }.pickerStyle(.segmented).labelsHidden().frame(width: 164)
-      if !m.running && m.mode != .code {
-        Button {
-          m.afterWriting {
-            if !m.writing, let i = m.inspection, i.textEditable {
-              m.startText(i.id, offset: 0)
-            } else {
-              m.setWriting(!m.writing)
-            }
+      }.labelsHidden().pickerStyle(.segmented).frame(width: 158).disabled(m.running)
+      if !m.running {
+        HStack(spacing: 7) {
+          Button {
+            m.afterWriting { m.undo() }
+          } label: {
+            Image(systemName: "arrow.uturn.backward")
           }
-        } label: {
-          Label(
-            m.writing ? "Done typing" : "Edit text",
-            systemImage: m.writing ? "checkmark" : "text.cursor")
-        }.help("Double-click text on the page to type. Escape returns to layout.")
+          .disabled(!m.history.canUndo && !m.writing).accessibilityLabel("Undo").help("Undo (⌘Z)")
+          Button {
+            m.afterWriting { m.redo() }
+          } label: {
+            Image(systemName: "arrow.uturn.forward")
+          }
+          .disabled(!m.history.canRedo).accessibilityLabel("Redo").help("Redo (⇧⌘Z)")
+        }.buttonStyle(.borderless)
+      }
+      Spacer(minLength: 4)
+      if !m.running {
+        Button { m.afterWriting { m.openInteractions() } } label: {
+          Label("Interactions", systemImage: "bolt")
+        }.help("Build a page interaction (⌥⌘J)")
       }
       Button {
         m.afterWriting { m.setRun(!m.running) }
       } label: {
-        Label(m.running ? "Stop" : "Run", systemImage: m.running ? "stop.fill" : "play.fill")
-      }.help("Run the current source in a separate preview")
-      Spacer()
+        Label(
+          m.running ? "Stop preview" : "Preview", systemImage: m.running ? "stop.fill" : "play.fill"
+        )
+        .font(.system(size: 12, weight: .bold)).foregroundStyle(StudioInk.forest)
+        .padding(.horizontal, 12).frame(height: 29)
+        .background(StudioInk.lime, in: Capsule())
+      }.buttonStyle(.plain).help("Run or stop the isolated preview (⌘R)")
+      Button {
+        m.afterWriting { m.save() }
+      } label: {
+        Text("Save")
+      }
+      .help("Save the working files (⌘S)")
+      Menu {
+        Button("Website folder…") { m.afterWriting { m.exportSnapshot(folder: true) } }
+        Button("Current HTML file…") { m.afterWriting { m.exportSnapshot(folder: false) } }
+      } label: {
+        Label("Export", systemImage: "square.and.arrow.up")
+      }
+      .fixedSize().help("Export a snapshot of the working website")
       if !m.running {
         Button {
           m.toggleInspector()
@@ -147,23 +194,11 @@ struct WorkspaceView: View {
         }
         .accessibilityLabel(
           m.showInspector && m.mode != .code ? "Hide inspector" : "Show inspector"
-        ).help("Show or hide the Inspector (⌥⌘I)")
+        )
+        .help("Show or hide Inspector (⌥⌘I)")
       }
-      Divider().frame(height: 19)
-      Button {
-        m.afterWriting { m.diff() }
-      } label: {
-        Label("Diff", systemImage: "plus.forwardslash.minus")
-      }
-      Button("Save") { m.afterWriting { m.save() } }
-      Menu {
-        Button("Website folder…") { m.afterWriting { m.exportSnapshot(folder: true) } }
-        Button("Current HTML file…") { m.afterWriting { m.exportSnapshot(folder: false) } }
-      } label: {
-        Label("Export snapshot", systemImage: "square.and.arrow.up")
-      }.fixedSize()
-        .help("Export the current source and assets as a site you can upload")
-    }.padding(.horizontal, 12).frame(height: 44)
+    }.padding(.horizontal, 14).frame(height: 52)
+      .background(StudioInk.forest).environment(\.colorScheme, .dark)
   }
   var writingBar: some View {
     HStack(spacing: 10) {
@@ -223,6 +258,13 @@ struct WorkspaceView: View {
         Button("Horizontal rule") { m.writeCommand("element", "hr") }
       }.fixedSize()
       Spacer()
+      if !m.showInspector {
+        FontControl(current: m.writingFormat.fontFamily) { m.styleSelection("font-family", $0) }
+        FontSizeControl(current: m.writingFormat.fontSize) { m.styleSelection("font-size", $0) }
+        PaintControl(title: "Text color", symbol: "textformat", current: m.writingFormat.ink) {
+          m.styleSelection("color", $0)
+        }
+      }
       if let pages = m.site?.pages, pages.count > 1 {
         Menu(m.page) {
           ForEach(pages, id: \.self) { page in
@@ -238,14 +280,16 @@ struct WorkspaceView: View {
         Text("Insert").tag("Insert")
         Text("Layers").tag("Tree")
         Text("Pages").tag("Pages")
-        if m.sidebarTab == "Files" { Text("Files").tag("Files") }
+        Text("Files").tag("Files")
       }.pickerStyle(.segmented).labelsHidden().padding([.horizontal, .top], 8)
+      if m.sidebarTab == "Tree" { PanelTitle(title: "Layers").padding(.horizontal, 12) }
+      if m.sidebarTab == "Pages" { PanelTitle(title: "Pages").padding(.horizontal, 12) }
       if m.sidebarTab == "Pages" {
         ScrollView {
           LazyVStack(alignment: .leading, spacing: 6) {
             ForEach(m.site?.pages ?? [], id: \.self) { page in
               Button {
-                m.choosePage(page)
+                m.afterWriting { m.choosePage(page) }
               } label: {
                 VStack(alignment: .leading, spacing: 5) {
                   if let image = m.pageImages[page] {
@@ -272,13 +316,22 @@ struct WorkspaceView: View {
         ScrollViewReader { proxy in
           ScrollView {
             LazyVStack(alignment: .leading, spacing: 1) {
-              ForEach(m.layers) { row in
-                layerRow(row)
-
+              let layers = m.layers
+              let parents = Set(layers.map(\.parent))
+              ForEach(ElementRow.visible(layers, folding: folded)) { row in
+                layerRow(row, isParent: parents.contains(row.id))
               }
             }
           }
-          .onChange(of: m.selected) { _, id in if let id { proxy.scrollTo(id, anchor: .center) } }
+          .onChange(of: m.selected, initial: true) { _, id in
+            guard let id, m.nodes.indices.contains(id) else { return }
+            var parent = m.nodes[id].parent
+            while m.nodes.indices.contains(parent) {
+              folded.remove(parent)
+              parent = m.nodes[parent].parent
+            }
+            DispatchQueue.main.async { proxy.scrollTo(id, anchor: .center) }
+          }
         }.disabled(m.running)
           .onChange(of: m.preview?.token) { _, _ in
             layerDrag = nil
@@ -289,14 +342,14 @@ struct WorkspaceView: View {
             dropMark = nil
           }
       } else if m.sidebarTab == "Files" {
-        Text("Project files").font(.headline).padding(.horizontal, 10)
+        PanelTitle(title: "Project files").padding(.horizontal, 10)
         ScrollView {
           LazyVStack(alignment: .leading, spacing: 2) {
             ForEach(m.site?.workspacePaths ?? [], id: \.self) { path in
               let ext = (path as NSString).pathExtension.lowercased()
               let art = Site.images.contains(ext) || Site.rasterPhotos.contains(ext)
               let row = Button {
-                m.chooseFile(path)
+                m.afterWriting { m.chooseFile(path) }
               } label: {
                 HStack {
                   Image(systemName: art ? "photo" : "doc.plaintext")
@@ -317,57 +370,85 @@ struct WorkspaceView: View {
           }.padding(.horizontal, 5)
         }
       } else {
-        TextField("Search elements", text: $paletteSearch).textFieldStyle(.roundedBorder).padding(
-          .horizontal, 10)
+        PanelTitle(title: "Parts drawer").padding(.horizontal, 12)
+        HStack(spacing: 6) {
+          Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+          TextField("Find an element", text: $paletteSearch).textFieldStyle(.plain)
+            .accessibilityLabel("Search elements")
+          if !paletteSearch.isEmpty {
+            Button {
+              paletteSearch = ""
+            } label: {
+              Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(.plain).accessibilityLabel("Clear element search")
+          }
+        }.padding(.horizontal, 8).frame(height: 29)
+          .background(StudioInk.card, in: RoundedRectangle(cornerRadius: 6))
+          .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(StudioInk.line))
+          .padding(.horizontal, 10)
         if m.hasFreePage {
           Picker("Drop into", selection: $m.dropOnPage) {
             Text("Container").tag(false)
             Text("Page canvas").tag(true)
-          }.pickerStyle(.segmented).padding(.horizontal, 10).help(
-            "Container targets the nearest compatible layout. Page canvas places overlapping objects on the page."
-          )
+          }.pickerStyle(.segmented).padding(.horizontal, 10)
+            .help("Container nests the element. Page canvas places it freely over the page.")
         }
         if let parent = m.selectedContainer, parent.tag != "body", !m.dropOnPage {
           Text("Click to add inside " + parent.label + ", or drag to place.").font(.caption)
             .padding(.horizontal, 10)
         }
         ScrollView {
-          LazyVStack(alignment: .leading, spacing: 12) {
+          LazyVStack(alignment: .leading, spacing: 13) {
             ForEach(m.paletteGroups, id: \.self) { group in
               let entries = matchingElements.filter { $0.group == group }
-              if !entries.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                  Text(group).font(.caption.bold()).foregroundStyle(.secondary)
-                  ForEach(entries) { item in
-                    PaletteTile(item: item.id, title: item.title, symbol: item.symbol, model: m)
-                      .frame(maxWidth: .infinity).frame(height: 29)
-                  }
-                }
-              }
+              if !entries.isEmpty { tray(group, entries) }
             }
-            if matchingElements.isEmpty { Text("No matching elements").font(.callout) }
+            if matchingElements.isEmpty {
+              Text("No elements match “" + paletteSearch + "”.").font(.callout)
+              Button("Clear search") { paletteSearch = "" }
+            }
           }.padding(.horizontal, 10).padding(.vertical, 4)
         }.disabled(m.mode == .code)
       }
       Spacer(minLength: 0)
       Divider()
       HStack {
-        Button {
-          m.sidebarTab = m.sidebarTab == "Files" ? "Insert" : "Files"
-        } label: {
-          Label("Files", systemImage: "folder")
-        }.buttonStyle(.plain)
-        Spacer()
         Menu {
           Toggle("Show canvas grid", isOn: $m.gridVisible)
           Toggle("Snap to guides and grid", isOn: $m.snap)
           Toggle("Free placement in positioned containers", isOn: $m.freePlacement)
         } label: {
-          Image(systemName: "slider.horizontal.3")
+          Label("Placement options", systemImage: "scope").font(.caption.weight(.semibold))
         }
         .menuStyle(.borderlessButton).fixedSize().accessibilityLabel("Placement options")
+        Spacer()
       }.padding(.horizontal, 11).padding(.bottom, 8)
-    }.background(Color(nsColor: .controlBackgroundColor))
+    }.background(StudioInk.paper)
+  }
+  private func tray(_ name: String, _ items: [InsertElement]) -> some View {
+    let searching = !paletteSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    let open = searching || expandedTrays.contains(name)
+    return VStack(alignment: .leading, spacing: 6) {
+      Button {
+        if open { expandedTrays.remove(name) } else { expandedTrays.insert(name) }
+      } label: {
+        HStack(spacing: 6) {
+          Capsule().fill(StudioInk.color(for: name)).frame(width: 4, height: 13)
+          Text(name).font(.system(size: 12, weight: .bold))
+          Spacer()
+          Text(String(items.count)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+          Image(systemName: open ? "chevron.down" : "chevron.right").font(.caption2.bold())
+        }.frame(height: 22).contentShape(Rectangle())
+      }.buttonStyle(.plain).disabled(searching).accessibilityValue(open ? "Expanded" : "Collapsed")
+      if open {
+        LazyVGrid(
+          columns: [GridItem(.flexible(minimum: 50)), GridItem(.flexible(minimum: 50))], spacing: 6
+        ) {
+          ForEach(items) { part in PartCard(part: part, model: m) }
+        }
+      }
+    }
   }
   private var matchingElements: [InsertElement] {
     let term = paletteSearch.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -407,38 +488,49 @@ struct WorkspaceView: View {
         }
         .buttonStyle(.borderless).disabled(slot == nil || !m.groupIDs.isEmpty).help(step.rawValue)
         .accessibilityLabel(step.rawValue)
-        .keyboardShortcut(
-          step == .up
-            ? .upArrow : step == .down ? .downArrow : step == .indent ? .rightArrow : .leftArrow,
-          modifiers: [.command, .option])
+
       }
     }.padding(.horizontal, 8)
   }
-  private func layerRow(_ row: ElementRow) -> some View {
+  private func layerRow(_ row: ElementRow, isParent: Bool) -> some View {
     let zone = dropMark?.row == row.id ? dropMark?.zone : nil
-    return Button {
-      if !m.writing && m.mode != .code
-        && (NSApp.currentEvent?.modifierFlags.intersection([.command, .shift]).isEmpty == false)
-      {
-        m.designer?.toggle(row.id)
+    return HStack(spacing: 3) {
+      if isParent {
+        Button {
+          if folded.contains(row.id) { folded.remove(row.id) } else { folded.insert(row.id) }
+        } label: {
+          Image(systemName: folded.contains(row.id) ? "chevron.right" : "chevron.down")
+            .font(.system(size: 9, weight: .semibold)).frame(width: 16, height: 24)
+        }.buttonStyle(.plain).accessibilityLabel(
+          (folded.contains(row.id) ? "Expand " : "Collapse ") + row.name)
       } else {
-        m.select(row.id)
+        Color.clear.frame(width: 16, height: 1)
       }
-    } label: {
-      HStack(spacing: 5) {
-        Image(systemName: layerIcon(row.tag)).foregroundStyle(.secondary).frame(width: 15)
-        Text(row.name).lineLimit(1).font(.callout)
-        Spacer(minLength: 0)
-        if zone == .inside { Image(systemName: "arrow.turn.down.right") }
-      }.padding(.leading, CGFloat(min(10, max(0, row.depth - 1))) * 9 + 5).padding(.trailing, 4)
-        .frame(maxWidth: .infinity, minHeight: 28, maxHeight: 28, alignment: .leading)
-        .background(
-          zone == .inside
-            ? Color.accentColor.opacity(0.25)
-            : m.selectedIDs.contains(row.id) ? pine.opacity(0.16) : .clear
-        )
-        .contentShape(Rectangle())
-    }.buttonStyle(.plain).id(row.id).help(row.label)
+      Button {
+        if !m.writing && m.mode != .code
+          && (NSApp.currentEvent?.modifierFlags.intersection([.command, .shift]).isEmpty == false)
+        {
+          m.designer?.toggle(row.id)
+        } else {
+          m.select(row.id)
+        }
+      } label: {
+        HStack(spacing: 5) {
+          Image(systemName: layerIcon(row.tag)).foregroundStyle(.secondary).frame(width: 15)
+          Text(row.name).lineLimit(1).font(.callout)
+          Spacer(minLength: 0)
+          if zone == .inside { Image(systemName: "arrow.turn.down.right") }
+        }.contentShape(Rectangle())
+      }.buttonStyle(.plain)
+    }.padding(.leading, CGFloat(min(10, max(0, row.depth - 1))) * 9 + 4).padding(.trailing, 4)
+      .frame(maxWidth: .infinity, minHeight: 28, maxHeight: 28, alignment: .leading)
+      .background(
+        zone == .inside
+          ? Color.accentColor.opacity(0.25)
+          : m.selectedIDs.contains(row.id) ? pine.opacity(0.16) : .clear
+      )
+      .contentShape(Rectangle())
+      .id(row.id).help(row.label)
       .overlay(alignment: zone == .after ? .bottom : .top) {
         if zone == .before || zone == .after {
           Rectangle().fill(Color.accentColor).frame(height: 2).allowsHitTesting(false)
@@ -487,6 +579,35 @@ struct WorkspaceView: View {
     default: return "square"
     }
   }
+  @ViewBuilder var pageSurface: some View {
+    if let p = m.preview {
+      GeometryReader { available in
+        let fit = min(
+          1, (available.size.width - 32) / m.width,
+          (available.size.height - 32) / m.deviceHeight)
+        let scale =
+          m.zoom == "Fit" ? max(0.05, fit) : (Double(m.zoom.dropLast()) ?? 100) / 100
+        ScrollView([.horizontal, .vertical]) {
+          Canvas(model: m, state: p, zoom: CGFloat(scale)).id(p.token)
+            .frame(width: m.width * scale, height: m.deviceHeight * scale)
+            .overlay(
+              Rectangle().strokeBorder(StudioInk.line, lineWidth: 1).allowsHitTesting(false)
+            )
+            .shadow(color: .black.opacity(0.18), radius: 5, y: 3)
+            .padding(16)
+            .frame(minWidth: available.size.width, alignment: .top)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background { WorkMat() }
+      }.frame(minHeight: 90, maxHeight: .infinity)
+    } else {
+      VStack(spacing: 8) {
+        Image(systemName: "chevron.left.forwardslash.chevron.right").font(.title2)
+        Text(m.sourceIssue.isEmpty ? "Preparing preview…" : m.sourceIssue).font(.headline)
+        Button("Open source") { m.mode = .code }
+      }.frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+  }
   var editor: some View {
     GeometryReader { geo in
       VStack(spacing: 0) {
@@ -494,7 +615,7 @@ struct WorkspaceView: View {
           HStack {
             Image(systemName: m.running ? "play.circle" : "doc.richtext").foregroundStyle(
               .secondary)
-            Text(m.page).lineLimit(1).font(.caption.bold())
+            Text(m.page).lineLimit(1).truncationMode(.middle).font(.caption.monospaced())
             Spacer()
             if !m.insertTool.isEmpty && !m.running {
               Text("Click to place " + m.insertTool.lowercased()).font(.caption)
@@ -514,53 +635,54 @@ struct WorkspaceView: View {
                 "Delete selected layers")
             }
             if !m.running {
-              BackgroundControl(model: m, pageWide: true)
               Button {
-                m.openFavicon()
+                m.afterWriting {
+                  if !m.writing, let i = m.inspection, i.textEditable {
+                    m.startText(i.id, offset: 0)
+                  } else {
+                    m.setWriting(!m.writing)
+                  }
+                }
               } label: {
-                Label("Favicon", systemImage: "square.grid.3x3")
-              }.controlSize(.small)
+                Label(
+                  m.writing ? "Done typing" : "Edit text",
+                  systemImage: m.writing ? "checkmark" : "text.cursor")
+              }.controlSize(.small).help("Double-click text on the canvas to write")
               if !m.writing { PageControls(model: m) }
             }
-          }.padding(.horizontal, 10).frame(height: 26)
+          }.padding(.horizontal, 10).frame(height: 33).background(StudioInk.paper)
           Divider()
-          if let p = m.preview {
-            GeometryReader { available in
-              let fit = min(
-                1, (available.size.width - 20) / m.width,
-                (available.size.height - 20) / m.deviceHeight)
-              let scale =
-                m.zoom == "Fit" ? max(0.05, fit) : (Double(m.zoom.dropLast()) ?? 100) / 100
-              ScrollView([.horizontal, .vertical]) {
-                Canvas(model: m, state: p, zoom: CGFloat(scale)).id(p.token)
-                  .frame(width: m.width * scale, height: m.deviceHeight * scale)
-                  .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
-                  .padding(9)
-                  .frame(minWidth: available.size.width, alignment: .top)
-              }
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-              .background(Color(nsColor: .underPageBackgroundColor))
-            }.frame(minHeight: 90, maxHeight: .infinity)
-          } else {
-            VStack(spacing: 8) {
-              Image(systemName: "chevron.left.forwardslash.chevron.right").font(.title2)
-              Text(m.sourceIssue.isEmpty ? "Preparing preview…" : m.sourceIssue).font(.headline)
-              Button("Open source") { m.mode = .code }
-            }.frame(maxWidth: .infinity, maxHeight: .infinity)
-          }
+          pageSurface
+        }
+        if m.mode != .code {
+          Divider()
+          StudioControls(model: m)
         }
         if m.running {
           Divider()
           HStack {
-            Text("Run console").font(.caption.bold())
+            Button {
+              consoleOpen.toggle()
+            } label: {
+              Label(
+                "Console (" + String(m.logs.count) + ")",
+                systemImage: consoleOpen ? "chevron.down" : "chevron.right")
+            }.buttonStyle(.plain).accessibilityValue(consoleOpen ? "Expanded" : "Collapsed")
             Spacer()
-            Button("Clear") { m.logs = [] }.controlSize(.small)
-          }.padding(.horizontal, 8)
-          ScrollView {
-            Text(m.logs.isEmpty ? "No console output." : m.logs.joined(separator: "\n")).font(
-              .system(size: 11, design: .monospaced)
-            ).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(6)
-          }.frame(height: 70)
+            if consoleOpen { Button("Clear") { m.logs = [] }.controlSize(.small) }
+          }.font(.caption.bold()).padding(.horizontal, 10).frame(height: 26)
+            .onChange(of: m.logs.last) { _, last in
+              if let last, last.hasPrefix("error  ") || last.hasPrefix("rejection  ") {
+                consoleOpen = true
+              }
+            }
+          if consoleOpen {
+            ScrollView {
+              Text(m.logs.isEmpty ? "No console output." : m.logs.joined(separator: "\n"))
+                .font(.system(size: 11, design: .monospaced)).textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(6)
+            }.frame(height: 70)
+          }
         }
         if m.mode != .design {
           Divider()
@@ -600,155 +722,204 @@ private struct Inspector: View {
     }
   }
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 12) {
-        Text("Inspector").font(.headline)
-        if m.writing {
-          Text(m.writingFormat.title).font(.subheadline).foregroundStyle(.secondary)
-          Divider()
-          FontControl(current: m.writingFormat.fontFamily) { m.styleSelection("font-family", $0) }
-          FontSizeControl(current: m.writingFormat.fontSize) { m.styleSelection("font-size", $0) }
-          PaintControl(title: "Text color", symbol: "textformat", current: m.writingFormat.ink) {
-            m.styleSelection("color", $0)
-          }
-          BackgroundControl(model: m, pageWide: false)
-          Button("Inspect block layout") { m.afterWriting { m.setWriting(false) } }
-        } else if !m.groupIDs.isEmpty {
-          GroupInspector(model: m)
-        } else {
-          Picker("Inspector", selection: $m.inspectorTab) {
-            ForEach(["Style", "Arrange", "Inspect"], id: \.self) { Text($0).tag($0) }
-          }.pickerStyle(.segmented).labelsHidden()
-          if let i = m.inspection {
-            Text(i.label).font(.system(.body, design: .monospaced).bold()).textSelection(.enabled)
-            Text(i.display + " layout").font(.caption).foregroundStyle(.secondary)
+    VStack(alignment: .leading, spacing: 0) {
+      HStack {
+        PanelTitle(title: "Inspector")
+        Spacer()
+        Image(systemName: "slider.horizontal.3").foregroundStyle(StudioInk.green)
+      }.padding(.horizontal, 14).frame(height: 44)
+      Divider()
+      ScrollView {
+        VStack(alignment: .leading, spacing: 12) {
+          if m.writing {
+            Text(m.writingFormat.title).font(.subheadline).foregroundStyle(.secondary)
             Divider()
-            if m.inspectorTab != "Inspect" {
-              DesignInspector(model: m, selection: i)
-            } else {
-              Text("Element").font(.headline)
-              if i.textEditable {
-                TextField("Text content", text: $text)
-                Button("Set text") {
-                  m.mutate(["kind": "text", "value": text], name: "Change element text")
-                }
-              } else {
-                Button("Edit contents in Code") {
-                  m.codeFallback(
-                    "This content is nested or exceeds the inspector text limit.", id: i.id)
-                }
-              }
-              Picker("Attribute", selection: $attr) {
-                ForEach(
-                  [
-                    "title", "id", "class", "href", "src", "alt", "value", "type", "for",
-                    "aria-label",
-                  ],
-                  id: \.self
-                ) { Text($0).tag($0) }
-              }.onChange(of: attr) { _, a in attributeValue = i.attributes[a] ?? "" }
-              HStack {
-                TextField("Value", text: $attributeValue)
-                Button("Set") {
-                  m.mutate(
-                    ["kind": "attr", "key": attr, "value": attributeValue], name: "Set " + attr)
-                }
-              }
-              Divider()
-              Text("CSS").font(.headline)
-              Picker("Property", selection: $m.property) {
-                ForEach(properties, id: \.self) { Text($0).tag($0) }
-              }.labelsHidden()
-              Text("Computed  " + i.computed).font(.caption.monospaced()).textSelection(.enabled)
-              if i.rules.indices.contains(i.winner) {
-                rule(i.rules[i.winner], title: "Winning declaration")
-              } else {
-                Text(
-                  i.limited
-                    ? "Complex cascade · inspect matched rules in Code."
-                    : "Inherited, initial, shorthand, or browser default."
-                ).font(.caption).foregroundStyle(.secondary)
-              }
-              if i.rules.count > 0 {
-                DisclosureGroup("Matched rules (\(i.rules.count))") {
-                  ForEach(i.rules.indices, id: \.self) { idx in
-                    rule(i.rules[idx], title: i.rules[idx].value)
-                  }
-                }
-              }
-              Picker("Change", selection: $target) {
-                Text("This element").tag("Element")
-                if i.rules.indices.contains(i.winner) { Text("Winning rule").tag("Winning rule") }
-                ForEach(i.classes, id: \.name) { c in Text("." + c.name).tag("." + c.name) }
-              }
-              if target == "Winning rule", i.rules.indices.contains(i.winner) {
-                let r = i.rules[i.winner]
-                if r.styleIndex != -2 {
-                  Button("Show affected elements") { m.impactRequest = r.selector }
-                }
-                Text("Affects \(r.count) on this page · " + r.examples).font(.caption)
-                Text(r.media.isEmpty ? "Global rule" : r.media).font(.caption)
-              } else {
-                if let c = i.classes.first(where: { "." + $0.name == target }) {
-                  Button("Show affected elements") { m.impactRequest = target }
-                  Text("Affects \(c.count) on this page · " + c.examples).font(.caption)
-                }
-                Picker("Scope", selection: $scope) {
-                  Text("Global").tag("Global")
-                  Text("Breakpoint").tag("Breakpoint")
-                }
-                if scope == "Breakpoint" {
-                  HStack {
-                    Text("Max width")
-                    TextField("px", value: $breakpoint, formatter: NumberFormatter())
-                    Text("px")
-                  }.font(.caption)
-                }
-                if target != "Element" || scope == "Breakpoint" {
-                  Picker("Write to", selection: $external) {
-                    Text("Page style").tag("Page")
-                    ForEach(linkedSheets(i), id: \.self) { Text($0).tag($0) }
-                  }
-                }
-              }
-              HStack {
-                TextField("CSS value", text: $value)
-                Button("Apply") {
-                  m.applyStyle(
-                    value: value, target: target, scope: scope, breakpoint: breakpoint,
-                    external: linkedSheets(i).contains(external) ? external : "Page")
-                }
-              }
-              Divider()
-              Text("Layout").font(.headline)
-              HStack {
-                Button("Earlier") {
-                  m.mutate(["kind": "reorder", "step": -1], name: "Move earlier")
-                }
-                Button("Later") { m.mutate(["kind": "reorder", "step": 1], name: "Move later") }
-              }
-              if i.canMove {
-                Text("Drag to position, or use Move in the Layout menu.").font(.caption)
+            FontControl(current: m.writingFormat.fontFamily) { m.styleSelection("font-family", $0) }
+            FontSizeControl(current: m.writingFormat.fontSize) { m.styleSelection("font-size", $0) }
+            PaintControl(title: "Text color", symbol: "textformat", current: m.writingFormat.ink) {
+              m.styleSelection("color", $0)
+            }
+            BackgroundControl(model: m, pageWide: false)
+            Button("Inspect block layout") { m.afterWriting { m.setWriting(false) } }
+          } else if !m.groupIDs.isEmpty {
+            GroupInspector(model: m)
+          } else {
+            if let i = m.inspection {
+              VStack(alignment: .leading, spacing: 5) {
+                Text(i.label).font(.system(.body, design: .monospaced).bold())
+                  .lineLimit(2).textSelection(.enabled)
                 HStack {
-                  ForEach(["←", "↑", "↓", "→"], id: \.self) { a in
-                    Button(a) {
-                      m.nudge(a == "←" ? -1 : a == "→" ? 1 : 0, a == "↑" ? -1 : a == "↓" ? 1 : 0)
+                  Text(i.display.capitalized)
+                  Spacer()
+                  Text("\(Int(i.width.rounded())) × \(Int(i.height.rounded()))").monospacedDigit()
+                }.font(.caption).foregroundStyle(.secondary)
+              }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                .background(StudioInk.green.opacity(0.10), in: RoundedRectangle(cornerRadius: 7))
+              Button { m.openInteractions() } label: {
+                Label("Edit interactions…", systemImage: "bolt")
+              }
+              Picker("Inspector", selection: $m.inspectorTab) {
+                ForEach(["Style", "Arrange", "Inspect"], id: \.self) { Text($0).tag($0) }
+              }.pickerStyle(.segmented).labelsHidden()
+              if i.canResize {
+                Button {
+                  m.openSizeControls()
+                } label: {
+                  Label("Resize…", systemImage: "arrow.up.left.and.arrow.down.right")
+                }.popover(isPresented: $m.showSize) {
+                  SizePanel(model: m).padding(14).frame(width: 285)
+                }
+              }
+              if m.inspectorTab != "Inspect" {
+                DesignInspector(model: m, selection: i)
+              } else {
+                Text("Element").font(.headline)
+                if i.textEditable {
+                  TextField("Text content", text: $text)
+                  Button("Set text") {
+                    m.mutate(["kind": "text", "value": text], name: "Change element text")
+                  }
+                } else {
+                  Button("Edit contents in Code") {
+                    m.codeFallback(
+                      "This content is nested or exceeds the inspector text limit.", id: i.id)
+                  }
+                }
+                Picker("Attribute", selection: $attr) {
+                  ForEach(
+                    [
+                      "title", "id", "class", "href", "src", "alt", "value", "type", "for",
+                      "aria-label",
+                    ],
+                    id: \.self
+                  ) { Text($0).tag($0) }
+                }.onChange(of: attr) { _, a in attributeValue = i.attributes[a] ?? "" }
+                HStack {
+                  TextField("Value", text: $attributeValue)
+                  Button("Set") {
+                    m.mutate(
+                      ["kind": "attr", "key": attr, "value": attributeValue], name: "Set " + attr)
+                  }
+                }
+                Divider()
+                Text("CSS").font(.headline)
+                Picker("Property", selection: $m.property) {
+                  ForEach(properties, id: \.self) { Text($0).tag($0) }
+                }.labelsHidden()
+                Text("Computed  " + i.computed).font(.caption.monospaced()).textSelection(.enabled)
+                if i.rules.indices.contains(i.winner) {
+                  rule(i.rules[i.winner], title: "Winning declaration")
+                } else {
+                  Text(
+                    i.limited
+                      ? "Complex cascade · inspect matched rules in Code."
+                      : "Inherited, initial, shorthand, or browser default."
+                  ).font(.caption).foregroundStyle(.secondary)
+                }
+                if i.rules.count > 0 {
+                  DisclosureGroup("Matched rules (\(i.rules.count))") {
+                    ForEach(i.rules.indices, id: \.self) { idx in
+                      rule(i.rules[idx], title: i.rules[idx].value)
                     }
                   }
                 }
+                Picker("Change", selection: $target) {
+                  Text("This element").tag("Element")
+                  if i.rules.indices.contains(i.winner) { Text("Winning rule").tag("Winning rule") }
+                  ForEach(i.classes, id: \.name) { c in Text("." + c.name).tag("." + c.name) }
+                }
+                if target == "Winning rule", i.rules.indices.contains(i.winner) {
+                  let r = i.rules[i.winner]
+                  if r.styleIndex != -2 {
+                    Button("Show affected elements") { m.impactRequest = r.selector }
+                  }
+                  Text("Affects \(r.count) on this page · " + r.examples).font(.caption)
+                  Text(r.media.isEmpty ? "Global rule" : r.media).font(.caption)
+                } else {
+                  if let c = i.classes.first(where: { "." + $0.name == target }) {
+                    Button("Show affected elements") { m.impactRequest = target }
+                    Text("Affects \(c.count) on this page · " + c.examples).font(.caption)
+                  }
+                  Picker("Scope", selection: $scope) {
+                    Text("Global").tag("Global")
+                    Text("Breakpoint").tag("Breakpoint")
+                  }
+                  if scope == "Breakpoint" {
+                    HStack {
+                      Text("Max width")
+                      TextField("px", value: $breakpoint, formatter: NumberFormatter())
+                      Text("px")
+                    }.font(.caption)
+                  }
+                  if target != "Element" || scope == "Breakpoint" {
+                    Picker("Write to", selection: $external) {
+                      Text("Page style").tag("Page")
+                      ForEach(linkedSheets(i), id: \.self) { Text($0).tag($0) }
+                    }
+                  }
+                }
+                HStack {
+                  TextField("CSS value", text: $value)
+                  Button("Apply") {
+                    m.applyStyle(
+                      value: value, target: target, scope: scope, breakpoint: breakpoint,
+                      external: linkedSheets(i).contains(external) ? external : "Page")
+                  }
+                }
+                Divider()
+                Text("Layout").font(.headline)
+                HStack {
+                  Button("Earlier") {
+                    m.mutate(["kind": "reorder", "step": -1], name: "Move earlier")
+                  }
+                  Button("Later") { m.mutate(["kind": "reorder", "step": 1], name: "Move later") }
+                }
+                if i.canMove {
+                  Text("Drag to position, or use Move in the Layout menu.").font(.caption)
+                  HStack {
+                    ForEach(["←", "↑", "↓", "→"], id: \.self) { a in
+                      Button(a) {
+                        m.nudge(a == "←" ? -1 : a == "→" ? 1 : 0, a == "↑" ? -1 : a == "↓" ? 1 : 0)
+                      }
+                    }
+                  }
+                }
+                Divider()
+                Button("Find or create click handler") { m.handler() }
               }
+            } else {
+              Label("Page", systemImage: "doc.richtext").font(.headline)
+              Text(m.page).font(.caption.monospaced()).textSelection(.enabled)
+              BackgroundControl(model: m, pageWide: true)
+              Button("Edit favicon…") { m.openFavicon() }
               Divider()
-              Button("Find or create click handler") { m.handler() }
+              if m.hasFreePage, m.layers.allSatisfy({ $0.tag == "body" }) {
+                Text("First element").font(.headline)
+                ForEach(
+                  [("Heading", "Place heading", "textformat"), ("Image", "Place photo", "photo")],
+                  id: \.0
+                ) { item in
+                  Button {
+                    m.sidebarTab = "Insert"
+                    m.arm(item.0)
+                  } label: {
+                    Label(item.1, systemImage: item.2)
+                  }
+                  .disabled(!m.safeToEdit)
+                }
+                Divider()
+              }
+              Label("Selection", systemImage: "cursorarrow").font(.headline)
+              Text(
+                "Click an object to style it. For an overlapping object, select its row in Layers."
+              )
+              .font(.callout).foregroundStyle(.secondary)
+              Button("Show layers") { m.sidebarTab = "Tree" }
             }
-          } else {
-            Text("Select an object on the page to inspect its style, size and CSS.")
-              .foregroundStyle(.secondary)
-            BackgroundControl(model: m, pageWide: true)
-            Button("Edit favicon…") { m.openFavicon() }
           }
-        }
-      }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
-    }.background(Color(nsColor: .controlBackgroundColor))
+        }.frame(maxWidth: .infinity, alignment: .leading).padding(13)
+      }
+    }.background(StudioInk.paper)
       .onReceive(m.$inspection) { reset($0) }
   }
   func linkedSheets(_ i: Inspection) -> [String] {

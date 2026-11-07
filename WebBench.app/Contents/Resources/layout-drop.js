@@ -62,9 +62,11 @@ const LayoutDrop = (() => {
   let ghost=null, chrome=null,caption=null,line=null;
   function clear() {
     ghost?.remove();ghost=null;
+    window.webBenchEmptyHint?.(true);
     if(chrome)chrome.style.display='none';
   }
   function show(d,item,x,y) {
+    window.webBenchEmptyHint?.(false);
     if(!chrome){
       chrome=document.createElement('div');
       chrome.style.cssText='all:initial!important;position:fixed!important;inset:0!important;pointer-events:none!important;z-index:2147483647!important';

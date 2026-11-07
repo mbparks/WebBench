@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal check · Green Shoe Garage</title>
+<style>
+  :root { color-scheme: light; font: 100%/1.5 system-ui, sans-serif; color: #19372f; background: #e9e9dc; }
+  body { min-height: 90vh; margin: 0; display: grid; place-items: center; padding: 1rem; }
+  main { max-width: 32rem; padding: clamp(1.5rem, 5vw, 3rem); background: #fffcf0; border: 1px solid #a7b3a4; border-radius: 1rem; }
+  small { color: #42644d; font-weight: 650; }
+  h1 { margin: .45rem 0 1.2rem; font: 550 clamp(2rem, 8vw, 3.2rem)/1 Georgia, serif; }
+  output { display: block; padding: .85rem 1rem; background: #253c33; color: #fff; border-radius: .4rem; font-family: ui-monospace, monospace; }
+  .controls { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem; }
+  button { padding: .55rem .95rem; border: 1px solid #57755b; border-radius: .4rem; background: #e5efd5; color: #19372f; font: inherit; cursor: pointer; }
+  button:first-child { background: #285541; color: white; }
+</style>
+</head><body>
+<main>
+  <small>Green Shoe Garage · Field instruments</small>
+  <h1>Signal check</h1>
+  <output id="readout" aria-live="polite">Standing by</output>
+  <div class="controls"><button id="test" type="button">Test signal</button>
+  <button id="log" type="button">Download test note</button></div>
+</main>
+<script data-webbench-workflow="signal-test">
+// WebBench interaction {"version":1,"trigger":"test","event":"click","preventDefault":true,"steps":[{"kind":"text","target":"readout","value":"Signal acquired","detail":""},{"kind":"background","target":"readout","value":"#275c43","detail":""},{"kind":"color","target":"readout","value":"#e4f5b9","detail":""}]}
+(() => {
+  function element(id) {
+    const node = document.getElementById(id);
+    if (!node) throw new Error("Missing interaction element #" + id);
+    return node;
+  }
+  function setText(node, text) {
+    if (node.matches("input, textarea, output")) node.value = text;
+    else node.textContent = text;
+  }
+  if (!document.getElementById("test")) return;
+  document.getElementById("test").addEventListener("click", async event => {
+    event.preventDefault();
+    try {
+      setText(element("readout"), "Signal acquired");
+      element("readout").style.setProperty("background-color", "#275c43", "important");
+      element("readout").style.setProperty("color", "#e4f5b9", "important");
+    } catch (error) {
+      console.error("WebBench interaction", error);
+    }
+  });
+})();
+</script><script data-webbench-workflow="test-note">
+// WebBench interaction {"version":1,"trigger":"log","event":"click","preventDefault":true,"steps":[{"kind":"downloadText","target":"","value":"signal-check.txt","detail":"Green Shoe Garage field note\nInstrument: Signal check\nTest: Visual signal indicator\n"}]}
+(() => {
+  function panel(title) {
+    const dialog = document.createElement("dialog");
+    const heading = document.createElement("h2");
+    heading.textContent = title;
+    dialog.setAttribute("aria-label", title);
+    dialog.append(heading);
+    document.body.append(dialog);
+    dialog.addEventListener("close", () => dialog.remove(), { once: true });
+    return dialog;
+  }
+  function control(label) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    return button;
+  }
+  function message(title, text) {
+    const dialog = panel(title);
+    const body = document.createElement("p");
+    body.textContent = text;
+    const close = control("Close");
+    close.addEventListener("click", () => dialog.close());
+    dialog.append(body, close);
+    return new Promise(resolve => {
+      dialog.addEventListener("close", resolve, { once: true });
+      dialog.showModal();
+    });
+  }
+  async function download(path, filename) {
+    if (location.protocol === "webbench:") {
+      await message("Download preview", "The published page downloads " + (filename || path) + (path.startsWith("blob:") ? "." : " from " + path + "."));
+      return;
+    }
+    const link = document.createElement("a");
+    link.href = path;
+    link.download = filename;
+    if (navigator.userActivation?.isActive) {
+      document.body.append(link);
+      link.click();
+      link.remove();
+      return;
+    }
+    const dialog = panel("Download file");
+    link.textContent = filename || path;
+    link.addEventListener("click", () => dialog.close());
+    const close = control("Close");
+    close.addEventListener("click", () => dialog.close());
+    dialog.append(link, close);
+    await new Promise(resolve => {
+      dialog.addEventListener("close", resolve, { once: true });
+      dialog.showModal();
+    });
+  }
+  if (!document.getElementById("log")) return;
+  document.getElementById("log").addEventListener("click", async event => {
+    event.preventDefault();
+    try {
+      {
+        const url = URL.createObjectURL(new Blob(["Green Shoe Garage field note\nInstrument: Signal check\nTest: Visual signal indicator\n"], { type: "text/plain;charset=utf-8" }));
+        try { await download(url, "signal-check.txt"); } finally { setTimeout(() => URL.revokeObjectURL(url), 60000); }
+      }
+    } catch (error) {
+      console.error("WebBench interaction", error);
+    }
+  });
+})();
+</script></body></html>

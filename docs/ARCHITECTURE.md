@@ -26,6 +26,10 @@ Apple API references: [page script preference](https://developer.apple.com/docum
 **SampleChecks.swift** hosts an isolated Session and a real WorkspaceView in a separate NSWindow. Each group uses private copies of bundled fixtures. The checker waits for a WebKit view whose coordinator matches the current preview generation. It reads results through the explicit WebKit completion callback, verifies expected source and disk bytes, and records failures per group. The external change group exercises the store and the same resolution method used by the dialog. Reports and the Safari test file are saved outside the active project. The report records Safari only after the user opens the generated file and enters an observation.
 
 
+## Workspace presentation
+
+StudioChrome.swift contains the appearance-aware colors, parts cards and dotted canvas surround. Each card contains the native PaletteTile button used for drag tracking and keyboard activation. Search temporarily opens matching trays. Layer folding is local presentation state and clears when the source snapshot changes. The editor-only blank-page illustration lives in the isolated canvas shadow tree. Its pass-through hit testing preserves the page coordinate under the pointer.
+
 ## Palette and multi-selection
 
 PaletteTile follows AppKit mouse-down, drag, release and Escape on the originating control. The coordinator converts the pointer through the window and visible WebKit bounds to a viewport fraction. layout-drop.js measures the destination in CSS pixels, removes the previous transient node before hit testing, and inserts a temporary, inert element into the rendered container for the hover preview. Write uses the current writing index to validate destinations and drains pending text changes before native insertion. The native source edit receives the parent, sibling and optional local coordinates. Source serialization never reads the preview node.

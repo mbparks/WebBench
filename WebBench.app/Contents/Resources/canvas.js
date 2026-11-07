@@ -14,6 +14,22 @@
     }
     return true;
   };
+  // Capture picking before the ordinary drag, text and keyboard edit handlers.
+  let workflowMode = false;
+  window.webBenchWorkflowMode = enabled => { workflowMode = !!enabled; };
+  for (const type of ['pointerdown','pointerup','click','dblclick','keydown','dragstart','drop','contextmenu']) {
+    window.addEventListener(type, event => {
+      if (!workflowMode) return;
+      if (type === 'keydown' && event.key !== 'Escape' && !['Backspace','Delete','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (type === 'keydown' && event.key === 'Escape') post('workflowCancelPick');
+      if (type === 'click') {
+        const target = event.target.closest?.('[' + marker + ']');
+        if (target && canMap(target)) post('workflowPick', { id: key(target) });
+      }
+    }, true);
+  }
   // Shadow DOM keeps selection handles and guides out of the author's styling.
   const chrome=document.createElement('div');
   chrome.setAttribute('aria-hidden','true');
@@ -24,11 +40,11 @@
   sheet.textContent=`
     *{box-sizing:border-box}
     .selection,.tip,.grip,.guide{display:none;position:fixed;pointer-events:none}
-    .selection{border:1.5px solid #188a69}
+    .selection{border:1.5px solid #168463;box-shadow:0 0 0 1px #ffffffad}
     .member{position:fixed;pointer-events:none;border:1px solid #188a69}
     .member.anchor{border:2px solid #164fc7}
     .hover{display:none;position:fixed;pointer-events:none;outline:1px dashed #188a6999}
-    .tip{padding:3px 7px;border-radius:4px;background:#134e40;color:white;font:11px system-ui;white-space:nowrap}
+    .tip{padding:3px 7px;border-radius:12px;background:#193e32;color:#e5f3c2;font:600 11px system-ui;white-space:nowrap}
     .grip{width:var(--hit,22px);height:var(--hit,22px);transform:translate(-50%,-50%);pointer-events:auto;touch-action:none}
     .grip::after{content:"";position:absolute;left:50%;top:50%;width:var(--dot,9px);height:var(--dot,9px);transform:translate(-50%,-50%);background:white;border:1.5px solid #12664f;border-radius:2px;box-shadow:0 1px 2px #0004}
     .guide{background:#cc4c8a}
@@ -58,12 +74,34 @@
   let members=[], outlines=[];
   let selected=null, prop='margin-top', destination=null;
   window.webBenchPlacement=enabled=>{free=enabled;};
+  // This guide exists only in the isolated Edit overlay. Pointer events pass through to the page.
+  let blankGuide;
+  if(document.body?.hasAttribute('data-free-page') && !document.body.children.length && !document.body.textContent?.trim()) {
+    blankGuide=overlay('blank-guide');
+    blankGuide.innerHTML='<div class="sample-pieces"><i class="sample-photo"><b></b></i><i class="sample-type">Aa</i><i class="sample-grid"><b></b><b></b><b></b><b></b></i></div><strong>Drag in your first element</strong><span>Double-click placed text to start writing.</span>';
+    const guideStyle=document.createElement('style');
+    guideStyle.textContent=`
+      .blank-guide{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;align-content:center;gap:13px;padding:22px;text-align:center;pointer-events:none;color:#253e34}
+      .blank-guide strong{font:normal clamp(23px,3.1vw,43px)/1.12 Georgia,serif;letter-spacing:-.04em;color:#213e32;background:#fffffff2;border-radius:6px;padding:2px 9px}
+      .blank-guide span{max-width:32em;font:500 clamp(13px,1.3vw,17px)/1.45 system-ui,sans-serif;color:#435d50;background:#fffffff2;border-radius:5px;padding:1px 6px}
+      .sample-pieces{position:relative;width:172px;height:93px;margin-bottom:5px}
+      .sample-pieces i{position:absolute;box-shadow:0 5px 9px #233e301b;border:1px solid #2b443932;border-radius:7px}
+      .sample-photo{width:70px;height:67px;left:4px;top:18px;transform:rotate(-13deg);background:#adced1;overflow:hidden}
+      .sample-photo:before{content:"";position:absolute;background:#fff3c4;width:14px;height:14px;border-radius:50%;top:10px;right:11px}
+      .sample-photo b{position:absolute;bottom:-23px;left:0;width:60px;height:55px;background:#40827c;transform:rotate(35deg);border-radius:4px}
+      .sample-type{width:72px;height:81px;top:0;left:53px;transform:rotate(4deg);background:#f2d5bc;color:#663e38;font:italic 38px/81px Georgia,serif;text-align:center}
+      .sample-grid{width:51px;height:51px;left:114px;top:37px;transform:rotate(13deg);background:#d7ebae;display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:11px}
+      .sample-grid b{border:1.5px solid #355d49;border-radius:1px}
+      @media(max-height:260px){.sample-pieces{display:none}.blank-guide{gap:4px}}
+    `;
+    shadow.append(guideStyle);
+  }
+  window.webBenchEmptyHint=visible=>{if(blankGuide)blankGuide.style.display=visible&&!tool?'grid':'none';};
   const cursorSheet=document.createElement('style');
   const armedAttr=marker+'-placing';
   cursorSheet.textContent='body ['+marker+']{cursor:grab!important} html['+armedAttr+'],html['+armedAttr+'] *{cursor:crosshair!important}';
-  cursorSheet.textContent+=' body[data-free-page]:not(:has(> ['+marker+']))::after{content:"Drag an element onto the canvas";position:absolute;top:4rem;left:0;right:0;text-align:center;color:#65766d;font:16px system-ui;pointer-events:none}';
   (document.head||document.documentElement).appendChild(cursorSheet);
-  window.webBenchTools=(item,enabled)=>{tool=item || '';snap=enabled;document.documentElement.toggleAttribute(armedAttr,!!tool);clear();};
+  window.webBenchTools=(item,enabled)=>{tool=item || '';snap=enabled;document.documentElement.toggleAttribute(armedAttr,!!tool);clear();window.webBenchEmptyHint(true);};
   function place(node,rect) {
     Object.assign(node.style,{display:'block',left:rect.x+'px',top:rect.y+'px',width:rect.width+'px',height:rect.height+'px'});
   }

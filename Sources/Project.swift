@@ -77,7 +77,8 @@ struct Site {
   static let audio = Set(["mp3", "m4a", "wav", "ogg", "flac"])
   static let video = Set(["mp4", "m4v", "mov", "webm"])
   static let media = audio.union(video)
-  static let supported = media.union(sourceExtensions).union(images).union(rasterPhotos).union([
+  static let downloads: Set<String> = ["pdf", "csv", "zip"]
+  static let supported = downloads.union(media).union(sourceExtensions).union(images).union(rasterPhotos).union([
     "ico", "woff", "woff2", "ttf", "otf", "wasm",
   ])
   let root: URL
@@ -195,7 +196,7 @@ struct Site {
       guard files.count + linkedAssets.count < 4096 else {
         throw BenchError("The site exceeds the 4,096 file workspace limit.")
       }
-      if !single && (media.contains(ext) || (rasterPhotos.contains(ext) && size > 12 * 1024 * 1024))
+      if !single && (downloads.contains(ext) || media.contains(ext) || (rasterPhotos.contains(ext) && size > 12 * 1024 * 1024))
       {
         _ = try safe(path, under: root)
         linkedAssets.insert(path)
