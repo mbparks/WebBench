@@ -1,0 +1,35 @@
+name: Native canvas placement
+on:
+  push:
+    branches: [fix/native-palette-preview]
+permissions:
+  contents: read
+jobs:
+  mac:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build universal WebBench
+        run: |
+          xcodebuild -version
+          xcodebuild -project WebBench.xcodeproj -scheme WebBench -configuration Release -destination 'generic/platform=macOS' -derivedDataPath "$RUNNER_TEMP/product" ONLY_ACTIVE_ARCH=NO ARCHS="arm64 x86_64" CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/build.log" || { tail -100 "$RUNNER_TEMP/build.log"; exit 1; }
+          app="$RUNNER_TEMP/product/Build/Products/Release/WebBench.app"
+          codesign --force --sign - --options runtime "$app"
+          codesign --verify --deep --strict "$app"
+          lipo -archs "$app/Contents/MacOS/WebBench"
+          ditto -c -k --keepParent "$app" "$RUNNER_TEMP/WebBench.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WebBench-macOS
+          path: ${{ runner.temp }}/WebBench.zip
+      - name: Test installed canvas
+        run: |
+          set -o pipefail
+          xcodebuild test -project WebBench.xcodeproj -scheme WebBench -destination 'platform=macOS' -parallel-testing-enabled NO -derivedDataPath "$RUNNER_TEMP/tests" -resultBundlePath "$RUNNER_TEMP/Placement.xcresult" -only-testing:WebBenchTests/WebBenchMacTests/testPaletteButtonPreviewFromNativeWindow 2>&1 | tee "$RUNNER_TEMP/placement.log"
+          grep -Eq 'Executed [1-9][0-9]* tests?, with 0 failures' "$RUNNER_TEMP/placement.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-placement-results
+          path: ${{ runner.temp }}/placement.log
