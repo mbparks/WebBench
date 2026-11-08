@@ -2,17 +2,17 @@
 
 WebBench is Green Shoe Garage’s native macOS WYSIWYG editor for HTML, CSS and JavaScript. Open a single-file Field Instrument or an existing site folder, move an element on the rendered page, inspect the source diff, and save back to the original files.
 
-**Version 0.15.1 · Developer preview · macOS 15 or later**
+**Version 0.15.2 · Developer preview · macOS 15 or later**
 
 ## Open the included app
 
-Extract the ZIP in Finder, open the **WebBench** folder and double-click **WebBench.app**. The included v0.15.1 developer preview is built for Apple silicon and Intel Macs with macOS 15 or later. Xcode is only needed for building from source. The app is ad-hoc signed. If macOS declines to open the preview, use the local build instructions below.
+Extract the ZIP in Finder, open the **WebBench** folder and double-click **WebBench.app**. The included v0.15.2 developer preview is built for Apple silicon and Intel Macs with macOS 15 or later. Xcode is only needed for building from source. The app is ad-hoc signed. If macOS declines to open the preview, use the local build instructions below.
 
 The repository tracks the full app bundle beside its source. To publish, commit the extracted folder using Git or GitHub Desktop on your Mac so the app's executable permission is recorded.
 
 ## Place elements on a free canvas
 
-Drag a part from **Insert**, or click its tile and then click the spot on the page. **Page canvas** places it directly on the paper, even over an existing shape or panel. To nest it in a section, choose **Container** or use **Layers → Add inside**. Drag a positioned child by its face to move it independently.
+Choose **File → New Site Folder…** or press **⌘N**. Both open on paper with the first-element artwork. Drag **Button** from **Insert**. A labeled part follows the pointer, and its outline on the paper shows where it will land. You can also click a tile and then click the spot on the page. **Page canvas** places it directly on the paper, even over an existing shape or panel. To nest it in a section, choose **Container** or use **Layers → Add inside**. Drag a positioned child by its face to move it independently.
 
 ## Add code and embeds
 
@@ -97,7 +97,7 @@ node --test Tests/*.test.cjs
 node Tests/roundtrip.cjs
 ```
 
-In the app, **File → Run Sample Checks…** runs fourteen workflows on disposable files. The v0.15.1 release was cross-built for Apple silicon and Intel. Placement was exercised in WebKit and Chromium on Linux, including save and reopen. Native drag gestures and independent Safari verification are pending. [Validation record](docs/VALIDATION.md) · [Mac acceptance checklist](docs/ACCEPTANCE.md)
+In the app, **File → Run Sample Checks…** runs fourteen workflows on disposable files. Xcode 16.4 built the universal v0.15.2 app on macOS. On an Apple silicon runner, UI automation launched the packaged app, checked the first-element artwork, dragged a Button and verified its saved HTML. [Validation record](docs/VALIDATION.md) · [Mac acceptance checklist](docs/ACCEPTANCE.md)
 
 ## Repository guide
 

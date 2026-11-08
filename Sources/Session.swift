@@ -134,6 +134,7 @@ final class Session: ObservableObject {
   @Published var status = "Open a page or site folder."
   @Published var preview: PreviewState?
   @Published var sourceIssue = ""
+  @Published var canvasIssue = ""
   @Published var property = "margin-top"
   @Published var width = 1280.0
   @Published var devicePlacement = false
@@ -443,10 +444,17 @@ final class Session: ObservableObject {
     panel.prompt = "Create"
     guard !busy, panel.runModal() == .OK, let url = panel.url, mayLeave() else { return }
     do {
-      try Site.createFolder(at: url, blankPage: Resources.string("blank", "html"))
-      site = nil
-      open(url)
+      try createCanvasFolder(at: url)
     } catch { alert(error.localizedDescription) }
+  }
+  func createCanvasFolder(at url: URL) throws {
+    try Site.createFolder(at: url, blankPage: Resources.string("canvas-page", "html"))
+    let newSite = try Site.open(url)
+    mode = .design
+    sidebarTab = "Insert"
+    zoom = "Fit"
+    useDevice("Desktop", 1280, 800)
+    use(newSite)
   }
   func new(_ template: String) {
     guard !busy else { return }
@@ -526,6 +534,7 @@ final class Session: ObservableObject {
   }
   func render() {
     guard let site, let s = site.files[page]?.text, let engine else { return }
+    canvasIssue = ""
     let marker = "data-wb-" + UUID().uuidString.lowercased()
     do {
       let ix = try engine.call("info", [s, marker], as: IndexedPage.self)
