@@ -54,9 +54,10 @@ private final class ProjectScheme: NSObject, WKURLSchemeHandler {
       enc = nil
     }
     let script = state.run ? "'self' webbench: 'unsafe-inline' 'unsafe-eval' blob:" : "'none'"
+    let frames = state.run ? "'self' webbench: about:" : "about: 'self'"
     let policy =
       "default-src 'none'; script-src " + script
-      + "; style-src 'self' webbench: 'unsafe-inline' data:; img-src 'self' webbench: data: blob:; font-src 'self' webbench: data:; media-src 'self' webbench: data: blob:; connect-src 'self' webbench: blob: data:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'"
+      + "; style-src 'self' webbench: 'unsafe-inline' data:; img-src 'self' webbench: data: blob:; font-src 'self' webbench: data:; media-src 'self' webbench: data: blob:; connect-src 'self' webbench: blob: data:; object-src 'none'; frame-src " + frames + "; base-uri 'self'; form-action 'none'"
     var headers = [
       "Content-Type": mime(path) + (enc.map { "; charset=" + $0 } ?? ""),
       "Content-Security-Policy": policy, "Cache-Control": "no-store",
@@ -491,11 +492,14 @@ struct Canvas: NSViewRepresentable {
       }
       if let draft = model.workflow {
         if kind == "workflowPick", model.safeToEdit, let id = d["id"] as? Int, let role = draft.picking {
-          draft.pick(id, for: role)
-          if draft.picking == nil { model.select(id) }
+          if let picked = draft.pick(id, for: role) { model.select(picked) }
         } else if kind == "workflowCancelPick" {
           draft.picking = nil
         }
+        return
+      }
+      if kind == "editSnippet", model.safeToEdit, let id = d["id"] as? Int {
+        model.openSnippet(at: id)
         return
       }
       if kind == "paletteDrop" {
@@ -727,6 +731,15 @@ struct Canvas: NSViewRepresentable {
       }
     }
     func webView(
+      _ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+      initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+      decisionHandler: @escaping (WKPermissionDecision) -> Void
+    ) {
+      // Device workflows use simulated media inside the editor. The exported site owns real capture.
+      decisionHandler(.deny)
+    }
+
+    func webView(
       _ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters,
       initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void
     ) {
@@ -743,7 +756,17 @@ struct Canvas: NSViewRepresentable {
       _ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
       decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
     ) {
-      guard action.targetFrame?.isMainFrame == true, let url = action.request.url,
+      guard let target = action.targetFrame, let destination = action.request.url else {
+        decisionHandler(.cancel); return
+      }
+      if !target.isMainFrame {
+        let inline = ["about:blank", "about:srcdoc"].contains(destination.absoluteString)
+        let local = state.run && destination.scheme == "webbench" && destination.host == "project"
+          && state.files[String(destination.path.dropFirst())] != nil
+        decisionHandler(inline || local ? .allow : .cancel)
+        return
+      }
+      guard action.sourceFrame.isMainFrame, let url = action.request.url,
         url.scheme == "webbench", url.host == "project"
       else {
         decisionHandler(.cancel)

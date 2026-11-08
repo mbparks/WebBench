@@ -109,11 +109,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     item(file, "New Blank Page…", #selector(blank), "", .command, self)
     item(file, "New Field Instrument…", #selector(instrument), "n", [.command, .shift], self)
     item(file, "Open File or Site Folder…", #selector(open), "o", .command, self)
+    item(file, "Try Device Workbench", #selector(deviceExample), "", .command, self)
+    item(file, "Try Power Meter Workflow", #selector(powerExample), "", .command, self)
     item(file, "Try Interaction Example", #selector(interactionExample), "", .command, self)
     item(file, "Open Sample Workbench…", #selector(sample), "", .command, self)
     item(file, "Show Project in Finder", #selector(showProject), "", .command, self)
     item(file, "Run Sample Checks…", #selector(checkSamples), "", .command, self)
     item(file, "Save Changes", #selector(save), "s", .command, self)
+    item(file, "Preview Website in Browser", #selector(browserPreview), "", .command, self)
     item(file, "Export Website Folder…", #selector(exportSite), "e", [.shift, .command], self)
     item(file, "Inspect Diff…", #selector(diff), "d", [.command, .shift], self)
     item(file, "Close", #selector(NSWindow.performClose(_:)), "w")
@@ -162,12 +165,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     check.start()
   }
   @objc func siteFolder() { model.afterWriting { self.model.newFolder() } }
+  @objc func deviceExample() { model.afterWriting { self.model.newStudioDraft("Device-workbench") } }
+  @objc func powerExample() { model.afterWriting { self.model.newStudioDraft("Power-meter") } }
   @objc func interactionExample() { model.afterWriting { self.model.newStudioDraft("Signal-check") } }
   @objc func interactions() { model.afterWriting { self.model.openInteractions() } }
   @objc func inspector() { model.toggleInspector() }
   @objc func favicon() { model.openFavicon() }
   @objc func freePage() { model.afterWriting { self.model.newStudioDraft() } }
   @objc func portfolio() { model.afterWriting { self.model.newStudioDraft("studio") } }
+  @objc func browserPreview() { model.afterWriting { self.model.previewInBrowser() } }
   @objc func exportSite() { model.afterWriting { self.model.exportSnapshot(folder: true) } }
   @objc func board() { model.afterWriting { self.model.new("board") } }
   @objc func blank() { model.afterWriting { self.model.new("blank") } }
@@ -175,8 +181,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
   @objc func open() { model.afterWriting { self.model.openPanel() } }
   @objc func save() { model.afterWriting { self.model.save() } }
   @objc func diff() { model.afterWriting { self.model.diff() } }
-  @objc func undo() { model.afterWriting { self.model.undo() } }
-  @objc func redo() { model.afterWriting { self.model.redo() } }
+  private var snippetUndo: UndoManager? {
+    (NSApp.keyWindow?.firstResponder as? NSTextView)?.undoManager
+  }
+  @objc func undo() {
+    if model.snippetEditor != nil { snippetUndo?.undo(); return }
+    model.afterWriting { self.model.undo() }
+  }
+  @objc func redo() {
+    if model.snippetEditor != nil { snippetUndo?.redo(); return }
+    model.afterWriting { self.model.redo() }
+  }
   @objc func run() { model.afterWriting { self.model.setRun(!self.model.running) } }
   @objc func mode(_ sender: NSMenuItem) {
     model.afterWriting { self.model.mode = Mode(rawValue: sender.title) ?? .split }
@@ -208,6 +223,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
   @objc func earlier() { model.mutate(["kind": "reorder", "step": -1], name: "Move earlier") }
   @objc func later() { model.mutate(["kind": "reorder", "step": 1], name: "Move later") }
   func validateMenuItem(_ item: NSMenuItem) -> Bool {
+    if model.snippetEditor != nil {
+      if item.action == #selector(undo) { item.title = "Undo Typing"; return snippetUndo?.canUndo == true }
+      if item.action == #selector(redo) { item.title = "Redo Typing"; return snippetUndo?.canRedo == true }
+      return false
+    }
     if model.busy || model.workflow != nil { return false }
     if item.action == #selector(interactions) { return model.site != nil && !model.running }
     if item.action == #selector(undo) {
@@ -237,7 +257,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     return model.site != nil
       || [
-        #selector(interactionExample), #selector(checkSamples), #selector(sample), #selector(siteFolder), #selector(blank),
+        #selector(deviceExample), #selector(powerExample), #selector(interactionExample), #selector(checkSamples), #selector(sample), #selector(siteFolder), #selector(blank),
         #selector(instrument), #selector(freePage), #selector(portfolio), #selector(board),
         #selector(open),
       ].contains(

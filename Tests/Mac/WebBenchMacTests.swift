@@ -50,6 +50,88 @@ final class WebBenchMacTests: XCTestCase {
     XCTAssertEqual(model.currentText, edited)
   }
 
+  func testDeviceCameraWorkflowCanBePickedEditedAndUndone() throws {
+    let source = "<html><body><button>Start</button><video></video><img alt='still'></body></html>"
+    let model = session(source)
+    let button = try XCTUnwrap(model.nodes.first { $0.tag == "button" })
+    let video = try XCTUnwrap(model.nodes.first { $0.tag == "video" })
+    let image = try XCTUnwrap(model.nodes.first { $0.tag == "img" })
+    model.select(button.id)
+    model.openInteractions()
+    let draft = try XCTUnwrap(model.workflow)
+    draft.steps = [InteractionStep(.cameraStart)]
+    let role = InteractionPick.target(draft.steps[0].id)
+    XCTAssertNil(draft.pick(image.id, for: role))
+    XCTAssertEqual(draft.pick(video.id, for: role), video.id)
+    model.finishInteraction(draft)
+    let saved = model.currentText
+    XCTAssertTrue(saved.contains("data-webbench-devices"))
+    model.undo()
+    XCTAssertEqual(model.currentText, source)
+    model.redo()
+    XCTAssertEqual(model.currentText, saved)
+    model.select(button.id)
+    model.openInteractions()
+    let edit = try XCTUnwrap(model.workflow)
+    XCTAssertEqual(edit.steps.first?.kind, .cameraStart)
+    XCTAssertEqual(edit.steps.first?.target, video.id)
+    model.finishInteraction(edit, remove: true)
+    XCTAssertFalse(model.currentText.contains("data-webbench-devices"))
+  }
+
+  func testSnippetInsertReopenEditAndUndo() throws {
+    let original = "<html><body><section><!-- keep --></section></body></html>"
+    let model = session(original)
+    let parent = try XCTUnwrap(model.nodes.first { $0.tag == "section" })
+    model.openSnippet(at: parent.id, adding: .iframe)
+    let draft = try XCTUnwrap(model.snippetEditor)
+    draft.fields = false
+    draft.text = "<iframe src='child.html' title='Meter' loading='lazy'></iframe>"
+    XCTAssertEqual(model.currentText, original)
+    model.history.groupsByEvent = false
+    model.history.beginUndoGrouping()
+    model.applySnippet(draft)
+    model.history.endUndoGrouping()
+    let inserted = model.currentText
+    XCTAssertEqual(inserted, original.replacingOccurrences(of: "</section>", with: draft.text + "</section>"))
+    let frame = try XCTUnwrap(model.nodes.first { $0.tag == "iframe" })
+    model.openSnippet(at: frame.id)
+    let reopened = try XCTUnwrap(model.snippetEditor)
+    XCTAssertEqual(reopened.text, draft.text)
+    reopened.url = "next.html"
+    model.history.beginUndoGrouping()
+    model.applySnippet(reopened)
+    model.history.endUndoGrouping()
+    XCTAssertEqual(model.currentText, inserted.replacingOccurrences(of: "child.html", with: "next.html"))
+    model.undo()
+    XCTAssertEqual(model.currentText, inserted)
+    model.undo()
+    XCTAssertEqual(model.currentText, original)
+    model.redo()
+    XCTAssertEqual(model.currentText, inserted)
+  }
+
+  func testLayoutShapeCatalogAndSourceUndo() throws {
+    let original = "<html><body><section><!-- keep --></section></body></html>"
+    let model = session(original)
+    let shapes = model.elements.filter { $0.group == "Layout" && $0.shape != nil }
+    let star = try XCTUnwrap(shapes.first { $0.title == "Star" })
+    XCTAssertEqual(star.shape?.points?.count, 10)
+    XCTAssertEqual(shapes.count, 24)
+    let parent = try XCTUnwrap(model.nodes.first { $0.tag == "section" })
+    model.history.groupsByEvent = false
+    model.history.beginUndoGrouping()
+    model.mutate(["kind": "insert", "item": star.id], id: parent.id, name: "Insert star")
+    model.history.endUndoGrouping()
+    let inserted = model.currentText
+    XCTAssertTrue(inserted.contains("clip-path: polygon("))
+    XCTAssertTrue(model.nodes.contains { $0.name == "Star" && $0.parent == parent.id })
+    model.undo()
+    XCTAssertEqual(model.currentText, original)
+    model.redo()
+    XCTAssertEqual(model.currentText, inserted)
+  }
+
   func testVisualAndCodeChangesShareNativeHistory() throws {
     let original = "<html><head></head><body><main><p>Readout</p></main></body></html>"
     let m = session(original)

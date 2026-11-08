@@ -63,6 +63,7 @@ struct WorkspaceView: View {
       }.font(.caption).padding(.horizontal, 12).frame(minHeight: 27)
     }.disabled(m.busy)
       .onChange(of: m.preview?.token) { _, _ in folded.removeAll() }
+      .sheet(item: $m.snippetEditor) { draft in SnippetEditor(model: m, draft: draft) }
       .sheet(item: $m.photoEditor) { job in PhotoEditor(model: m, job: job) }
       .sheet(item: $m.iconEditor) { edit in FaviconEditor(model: m, edit: edit) }
       .sheet(isPresented: Binding(get: { m.diffText != nil }, set: { if !$0 { m.diffText = nil } }))
@@ -121,6 +122,8 @@ struct WorkspaceView: View {
       Menu {
         Button("Open file or folder…") { m.afterWriting { m.openPanel() } }
         Button("New free canvas") { m.afterWriting { m.newStudioDraft() } }
+        Button("Try device workbench") { m.afterWriting { m.newStudioDraft("Device-workbench") } }
+        Button("Try power meter workflow") { m.afterWriting { m.newStudioDraft("Power-meter") } }
         Button("Try interaction example") { m.afterWriting { m.newStudioDraft("Signal-check") } }
         Button("New Studio Portfolio") { m.afterWriting { m.newStudioDraft("studio") } }
         Button("New blank page…") { m.afterWriting { m.new("blank") } }
@@ -442,11 +445,19 @@ struct WorkspaceView: View {
         }.frame(height: 22).contentShape(Rectangle())
       }.buttonStyle(.plain).disabled(searching).accessibilityValue(open ? "Expanded" : "Collapsed")
       if open {
-        LazyVGrid(
-          columns: [GridItem(.flexible(minimum: 50)), GridItem(.flexible(minimum: 50))], spacing: 6
-        ) {
-          ForEach(items) { part in PartCard(part: part, model: m) }
+        let shapes = items.filter { $0.shape != nil }
+        partGrid(items.filter { $0.shape == nil })
+        if !shapes.isEmpty {
+          Text("Shapes").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+          partGrid(shapes)
         }
+      }
+    }
+  }
+  @ViewBuilder private func partGrid(_ items: [InsertElement]) -> some View {
+    if !items.isEmpty {
+      LazyVGrid(columns: [GridItem(.flexible(minimum: 50)), GridItem(.flexible(minimum: 50))], spacing: 6) {
+        ForEach(items) { part in PartCard(part: part, model: m) }
       }
     }
   }
@@ -454,7 +465,7 @@ struct WorkspaceView: View {
     let term = paletteSearch.trimmingCharacters(in: .whitespacesAndNewlines)
     return m.elements.filter {
       term.isEmpty
-        || [$0.id, $0.title, $0.tag, $0.group].contains(where: {
+        || [$0.id, $0.title, $0.tag, $0.group, $0.shape == nil ? "" : "Shapes"].contains(where: {
           $0.localizedCaseInsensitiveContains(term)
         })
     }
@@ -465,7 +476,15 @@ struct WorkspaceView: View {
         let options = m.elements.filter { $0.group == group && m.accepts($0.tag, in: row) }
         if !options.isEmpty {
           Menu(group) {
-            ForEach(options) { item in Button(item.title) { m.insertChild(item, in: row.id) } }
+            ForEach(options.filter { $0.shape == nil }) { item in
+              Button(item.title) { m.insertChild(item, in: row.id) }
+            }
+            let shapes = options.filter { $0.shape != nil }
+            if !shapes.isEmpty {
+              Menu("Shapes") {
+                ForEach(shapes) { item in Button(item.title) { m.insertChild(item, in: row.id) } }
+              }
+            }
           }
         }
       }
@@ -755,6 +774,11 @@ private struct Inspector: View {
                 }.font(.caption).foregroundStyle(.secondary)
               }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
                 .background(StudioInk.green.opacity(0.10), in: RoundedRectangle(cornerRadius: 7))
+              if let owner = m.snippetNode(at: i.id), let kind = owner.snippet.flatMap(SnippetKind.init(rawValue:)) {
+                Button { m.openSnippet(at: owner.id) } label: {
+                  Label("Edit " + kind.title.lowercased() + "…", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+              }
               Button { m.openInteractions() } label: {
                 Label("Edit interactions…", systemImage: "bolt")
               }

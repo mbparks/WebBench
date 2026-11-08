@@ -2,6 +2,43 @@
 (() => {
   const {marker,token}=WB;
   const post=(kind,data)=>window.webkit.messageHandlers.design.postMessage({token,kind,...data});
+  // A browsing context receives its own mouse events. During editing, hit-test the real
+  // frame box in the parent document so ordinary selection and resize handles still work.
+  if (WB.tree?.some(row=>row.tag==='iframe')) {
+    const selector='iframe['+marker+']';
+    const frames=Array.from(document.querySelectorAll(selector));
+    const shield=document.createElement('style');
+    shield.textContent=selector+'{pointer-events:none!important}';
+    document.head.append(shield);
+    for (const type of ['pointerdown','pointerup','pointermove','click','dblclick','contextmenu']) {
+      window.addEventListener(type,event=>{
+        if(!event.isTrusted || event.target.closest?.(selector)) return;
+        const {clientX:x,clientY:y}=event;
+        if(!frames.some(frame=>{
+          const rect=frame.getBoundingClientRect();
+          return x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom;
+        })) return;
+        shield.sheet.disabled=true;
+        let frame;
+        try { frame=document.elementFromPoint(x,y); }
+        finally { shield.sheet.disabled=false; }
+        if(!frame?.matches(selector)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const EventType=type.startsWith('pointer')?PointerEvent:MouseEvent;
+        frame.dispatchEvent(new EventType(type,event));
+      },true);
+    }
+  }
+  if(WB.tree?.some(row=>row.tag==='div') && document.querySelector('div[data-html-snippet]')) {
+    const hint=marker+'-empty-snippet';
+    const style=document.createElement('style');
+    style.textContent='['+hint+']::before{content:"Custom HTML";display:inline-block;padding:8px 12px;border:1px dashed #628470;color:#264c3b;background:#edf2ea;font:13px system-ui}';
+    document.head.append(style);
+    for(const node of document.querySelectorAll('div[data-html-snippet]')) {
+      if(node.getBoundingClientRect().height<=1) node.setAttribute(hint,'');
+    }
+  }
   const transparent=c=>c==='transparent'||/^rgba\(.*[,/]\s*0(?:\.0+)?\s*\)$/.test(c);
   const snapshot=()=>{
     if(!document.body)return;

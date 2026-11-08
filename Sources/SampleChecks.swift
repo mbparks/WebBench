@@ -112,6 +112,7 @@ final class SampleChecks: ObservableObject {
     await check("11. Page and element backgrounds, favicon painting and export", pageAppearance)
     await check("12. Resize and edit a photo, undo and reopen", photoEditing)
     await check("13. Insert inside a section and rearrange Layers", nestedLayers)
+    await check("14. Edit and run a conditional power calculation", calculatedInteraction)
     let passed = results.filter { $0.hasPrefix("PASS ·") }.count
     activity =
       Task.isCancelled ? "Checks stopped" : "\(passed) of \(results.count) automated checks passed"
@@ -867,6 +868,41 @@ final class SampleChecks: ObservableObject {
     return
       "A synthetic WebKit drop inserted a button. Computed margins, two-buffer native Undo/Redo, save and reopen matched."
   }
+  private func calculatedInteraction() async throws -> String {
+    let url = directory.appendingPathComponent("DC Power Meter.html")
+    let original = try Resources.string("Power-meter", "html", in: "Fixtures")
+    try Data(original.utf8).write(to: url, options: .withoutOverwriting)
+    enter(try Site.open(url))
+    editor.select(try node("button#test"))
+    editor.openInteractions()
+    defer { editor.workflow = nil; editor.setRun(false) }
+    guard let draft = editor.workflow, draft.existing, draft.conditional,
+      draft.steps.first?.kind == .calculate, draft.otherwise.first?.kind == .text
+    else { throw BenchError("The calculation and its two branches did not reopen.") }
+    let form = try node("form#meter")
+    let picked = draft.pick(try node("button#test"), for: .condition)
+    try require(picked == form, "The condition picker did not resolve the surrounding form.")
+    draft.steps[0].digits = 3
+    editor.finishInteraction(draft)
+    try require(editor.workflow == nil, draft.issue)
+    let edited = editor.currentText
+    try require(edited != original, "The precision change did not reach source.")
+    editor.undo()
+    try require(editor.currentText == original, "Undo changed unrelated markup.")
+    editor.redo()
+    try require(editor.currentText == edited, "Redo did not restore the workflow.")
+    try save()
+    enter(try Site.open(url))
+    try require(editor.currentText == edited, "The reopened HTML differs from the working page.")
+    editor.setRun(true)
+    let ready = try await js("document.getElementById('test').click(); document.getElementById('power').value")
+    try require(ready as? String == "3.000 W", "The valid branch did not display 3.000 W.")
+    let invalid = try await js("document.getElementById('amps').value=''; document.getElementById('test').click(); document.getElementById('power').value")
+    try require(invalid as? String == "Enter a voltage and a current.", "The invalid branch did not run.")
+    try require(editor.site?.dirtyPaths.isEmpty == true, "Runtime calculation dirtied the page.")
+    return "Edited decimal precision, undid/redid the source edit, saved, reopened, and ran the valid and invalid branches in WebKit."
+  }
+
   private func fieldInstrument() async throws -> String {
     let output = directory.appendingPathComponent("Temperature.html")
     try Data(Resources.string("blank", "html").utf8).write(to: output, options: .withoutOverwriting)

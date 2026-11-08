@@ -267,9 +267,9 @@
       if(s===e)continue;
       const z=Number(getComputedStyle(s).zIndex)||0;front=Math.max(front,z);back=Math.min(back,z);
     }
-    post('select',{id:key(e),label:label(e),position:cs.position,photoURL:e.localName==='img'&&!/^data:/i.test(e.getAttribute('src')||'')?(e.currentSrc||e.src||''):'',responsivePhoto:e.localName==='img'&&(e.hasAttribute('srcset')||e.parentElement?.localName==='picture'),frontLevel:front+1,backLevel:back-1,prop,text:e.children.length||e.textContent.length>20000?'':e.textContent,textEditable:e.children.length===0 && e.textContent.length<=20000,classes,...matchRules(e,prop),
+    post('select',{id:key(e),label:label(e),position:cs.position,photoURL:e.localName==='img'&&!/^data:/i.test(e.getAttribute('src')||'')?(e.currentSrc||e.src||''):'',responsivePhoto:e.localName==='img'&&(e.hasAttribute('srcset')||e.parentElement?.localName==='picture'),frontLevel:front+1,backLevel:back-1,prop,text:e.children.length||e.textContent.length>20000?'':e.textContent,textEditable:e.localName!=='iframe' && e.children.length===0 && e.textContent.length<=20000,classes,...matchRules(e,prop),
       sheets:[...document.styleSheets].map(s=>s.href).filter(Boolean),...frame,display:cs.display,
-      attributes:Object.fromEntries(['id','class','href','src','alt','value','title','aria-label','for','type'].map(a=>[a,e.getAttribute(a)||'']))});
+      attributes:Object.fromEntries(['id','class','href','src','alt','value','title','aria-label','for','type'].map(a=>[a,(a==='src' && e.localName==='iframe' ? e.getAttribute(marker+'-src') : e.getAttribute(a))||'']))});
   }
   window.webBenchSelect=(id,property,scroll=false)=>window.webBenchSelectMany([id],property,scroll);
   window.addEventListener('click',event=>{
@@ -327,6 +327,10 @@
   }
   window.addEventListener('dblclick',event=>{
     if(tool)return;
+    const snippet=event.target.closest?.('iframe,pre,div[data-html-snippet]');
+    if(snippet && canMap(snippet)) {
+      event.preventDefault();post('editSnippet',{id:key(snippet)});return;
+    }
     const e=event.target.closest?.('p,h1,h2,h3,h4,h5,h6,li,td,th,figcaption,button,a,label,span,div');
     if(!e || !canMap(e))return;
     if(!e.textContent && !e.children.length){event.preventDefault();post('writeAt',{id:key(e),offset:0});return;}

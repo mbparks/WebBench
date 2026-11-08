@@ -2,13 +2,33 @@
 
 WebBench is Green Shoe Garage’s native macOS WYSIWYG editor for HTML, CSS and JavaScript. Open a single-file Field Instrument or an existing site folder, move an element on the rendered page, inspect the source diff, and save back to the original files.
 
-**Version 0.11.0 · Developer preview · macOS 15 or later**
+**Version 0.15.0 · Developer preview · macOS 15 or later**
 
 ## Open the included app
 
-Extract the ZIP in Finder, open the **WebBench** folder and double-click **WebBench.app**. The included v0.11.0 developer preview is built for Apple silicon and Intel Macs with macOS 15 or later. Xcode is only needed for building from source. The app is ad-hoc signed. If macOS declines to open the preview, use the local build instructions below.
+Extract the ZIP in Finder, open the **WebBench** folder and double-click **WebBench.app**. The included v0.15.0 developer preview is built for Apple silicon and Intel Macs with macOS 15 or later. Xcode is only needed for building from source. The app is ad-hoc signed. If macOS declines to open the preview, use the local build instructions below.
 
 The repository tracks the full app bundle beside its source. To publish, commit the extracted folder using Git or GitHub Desktop on your Mac so the app's executable permission is recorded.
+
+## Add code and embeds
+
+Open **Insert → Code & embeds** and drag a tile onto the canvas or into a container. **Code snippet** displays copyable code. **Custom HTML** accepts a fragment with multiple elements, CSS and JavaScript. **Iframe embed** accepts a page URL, a relative project path, or pasted provider markup. Double-click the placed item or use its **Edit** button in the Inspector to reopen it.
+
+Design shows selectable iframe placeholders. In-app Preview runs the widget scripts and loads local project frames and inline frames. Choose **File → Preview Website in Browser** to open a temporary snapshot with online embeds enabled by the browser. The included Signal notes page has a code example, a working pulse counter and a self-contained iframe. [Open the example](Fixtures/Snippets-and-embeds.html)
+
+## Build a device interaction
+
+Choose **File → Try Device Workbench**, then **Apply & preview → Connect serial → Send line → Read line**. The readout echoes **PING**. The same example has a USB byte console, camera with snapshot button and a live microphone level meter. Each control opens as an editable workflow. [Standalone Device Workbench](Fixtures/Device-workbench.html)
+
+For your own page, add a button and a suitable output. Select the button, choose **Interactions**, then choose an action under **Serial port**, **USB device**, **Camera** or **Microphone**. Click **Pick** to select a readout, video, image or meter on the canvas. Add a separate Stop or Disconnect button to release the device.
+
+WebBench Preview simulates these devices. To use physical hardware, export the website and open it over HTTPS or localhost. Desktop Chrome supports the serial and USB choosers. Each visitor grants access in their browser. The example guide includes local serving instructions and USB protocol settings. [Device workflow guide](docs/USER-GUIDE.md#device-workflows)
+
+## Try a no-code power meter
+
+Choose **File → Try Power Meter Workflow**. The button checks the form, multiplies the voltage and current, and displays the result in watts. Choose **Apply & preview**, then **Measure power**. At 12 V and 0.25 A the readout shows **3.00 W**. Clear either input and press the button again to exercise the **Otherwise** branch. [Standalone DC Power Meter](Fixtures/Power-meter.html)
+
+On your own page, select a trigger and open **Interactions**. Pick live values from the canvas, set a condition, and add steps to **Then** and **Otherwise**. The 34 actions cover devices, arithmetic, live values, appearance, forms, media, navigation within a page, dialogs and files. The 11 triggers include submission, keyboard, focus and pointer events. Each workflow is saved as ordinary JavaScript.
 
 ## Make a button do something
 
@@ -30,11 +50,15 @@ bash Build-WebBench.command
 
 The script prints the path to the app and its ZIP, and reveals the app in Finder. Build logs are under `build/local.*/build.log`. If the script cannot find Xcode, select your installed Xcode under **Xcode → Settings → Locations → Command Line Tools**.
 
+## Place a shape
+
+Open **Insert → Layout → Shapes** and drag a silhouette onto the page. Search **Shapes** to show all 24, or type **arrow** to see the four directions. Select the shape, drag a corner to resize it, and use **Element background** in the Inspector to change its fill. The saved shape is ordinary HTML and CSS and works offline.
+
 ## At the workbench
 
-Start with a blank sheet and drag a card from **Insert → Parts drawer**. The trays fold, and a search looks through all 56 elements. Double-click placed text to write. Select an object to bring its type, color and size into the Inspector. Open **Page** above the canvas for its background, favicon, title and height.
+Start with a blank sheet and drag a card from **Insert → Parts drawer**. The trays fold, and a search looks through all 80 elements. Double-click placed text to write. Select an object to bring its type, color and size into the Inspector. Open **Page** above the canvas for its background, favicon, title and height.
 
-The device controls sit below the canvas. Choose a screen or click its dimensions to scrub the width. **Preview** runs the page and **Stop preview** brings you back to editing. The bottom status bar opens the source diff.
+The screen-size controls sit below the canvas. Choose a screen or click its dimensions to scrub the width. **Preview** runs the page and **Stop preview** brings you back to editing. The bottom status bar opens the source diff.
 
 ## Try a source-preserving edit
 
@@ -49,7 +73,7 @@ Visual operations patch mapped source ranges. Opening and saving an untouched pa
 
 - **Visual interactions** with ordered actions, canvas target picking and ordinary JavaScript embedded in the page.
 - **Design, Code and Split views** with a WebKit canvas, document tree and CSS inspector.
-- **56 searchable Insert elements** for free-position pages, semantic sections, Flexbox, Grid, typography, forms, tables and local media.
+- **80 searchable Insert elements** for free-position pages, semantic sections, Flexbox, Grid, typography, forms, tables and local media.
 - **Direct editing** with resize handles, type and color controls, breakpoint-specific placement, nested Layers and native Undo/Redo.
 - **Offline assets and export** with photo resizing, crop, filters, borders, a favicon editor, single-file HTML and portable site folders.
 
@@ -69,7 +93,7 @@ node --test Tests/*.test.cjs
 node Tests/roundtrip.cjs
 ```
 
-In the app, **File → Run Sample Checks…** runs thirteen workflows on disposable files. The v0.11.0 release was cross-built for Apple silicon and Intel. Its recorded browser checks used Chromium on Linux. Native drag gestures and independent Safari verification are pending. [Validation record](docs/VALIDATION.md) · [Mac acceptance checklist](docs/ACCEPTANCE.md)
+In the app, **File → Run Sample Checks…** runs fourteen workflows on disposable files. The v0.15.0 release was cross-built for Apple silicon and Intel. Its recorded browser checks used Chromium on Linux. Native drag gestures and independent Safari verification are pending. [Validation record](docs/VALIDATION.md) · [Mac acceptance checklist](docs/ACCEPTANCE.md)
 
 ## Repository guide
 

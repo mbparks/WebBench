@@ -1,5 +1,27 @@
 # Mac acceptance workflows
 
+## Snippets and embeds on macOS
+
+1. Open a disposable site folder with two HTML pages. Drag **Code snippet** into a section, enter `<button>A & B</button>` and insert. Confirm it displays literally, Undo restores the original bytes and Redo restores the snippet.
+2. Drag **Custom HTML** onto a free page. Paste an HTML button and script. Check that Design stays idle, Preview runs the script and edit/reopen preserves the original markup around the widget. An unfinished tag should keep the draft available for correction.
+3. Drop **Iframe embed**, pick the second page, set its title, and resize it by dragging a corner. Double-click to revise the URL. Check that Preview can use the second page and that switching back restores the editable placeholder.
+4. Paste provider iframe code with custom attributes. Cancel once and verify the source diff stays empty. Insert it, save and reopen. Use **Preview Website in Browser**, verify the default browser opens the selected page, and test the embed on an HTTPS host accepted by the provider. Check the relative local frame independently in Safari.
+
+## Layout shapes on macOS
+
+1. Open a blank canvas and expand **Insert → Layout**. Search **Shapes** and check that 24 silhouettes are available. Search **arrow**, then drag a left arrow onto the canvas. Check that the hover outline and saved direction agree.
+2. Drag a star into a section and a heart into a flex row. Select each by clicking its filled area. Resize and recolor one, check the diff, then Undo and Redo. Verify the names in Layers.
+3. Save and reopen, export the page, and open the export in Safari. Check the silhouettes and fills at desktop and phone widths. Confirm an untouched save has the same hash.
+
+## Device Workbench on macOS
+
+1. Open **File → Try Device Workbench**, change the Connect serial baud rate, Apply, review the diff, Undo, Redo, save and reopen. The device support script should occur exactly once, and existing separate handlers should survive unchanged.
+2. Choose **Apply & preview**. Send and read PING. Send and read `01 0A FF`. Start the test camera, take a snapshot and stop. Start and stop the meter. Check for the simulated-device status. Stop Preview and check that readouts and snapshot pixels did not enter the source.
+3. Export a disposable website folder. Serve it at localhost following the User Guide. In desktop Chrome, connect a serial board running known echo firmware with matching baud and LF framing. Send a harmless known string. Confirm the line in the chosen readout. Unplug during a read, reconnect and repeat.
+4. Connect a WebUSB-compatible test peripheral with a documented harmless command. Set its VID/PID, configuration, alternate, interface and endpoint numbers. Cancel the chooser once. Reopen it, send the known command and compare returned bytes with the device specification. Disconnect with a pending transfer and reconnect.
+5. In a capture-capable browser, deny the camera or microphone request once and verify the status. Grant the permission, take two different stills, and watch the meter respond to sound. Press each Stop control and check the browser’s camera and microphone indicators. Repeat camera and microphone acceptance in Safari. Reopen the source and compare its bytes with the exported original.
+
+
 For the packaged app, start with **File → Run Sample Checks…**. Each invocation creates a separate editor session and fresh files. It records hash comparisons, a real WKWebView synthetic flex drop, computed spacing at two widths, native Undo/Redo, a single-file conversion, a meter nudge, the original link and ODIN behavior, recovery after a separate disk write, writing on the rendered page, arranging a box on a free-position board, dragging from a native tile into flex, arranging several selected objects, and the whole-page free canvas with device-specific export, favicon and photo editing, and nested insertion with Layers reordering. A failed group records its error and allows subsequent groups to run.
 
 At the end, use **Open instrument in Safari**, enter 25, click Convert, and record the observed result in the checks window. **Show report in Finder** opens the run folder. The report identifies synthetic-event checks and the separate user-observed Safari result. For physical pointer input, native dialogs and file picker coverage, use the steps below.
@@ -111,3 +133,8 @@ Command-click three positioned siblings of different sizes. Align their top edge
 Choose **File → Try Interaction Example**. Change the readout text, add **Open a dialog**, and choose **Apply & preview**. Press **Test signal**, dismiss the dialog, then try the download button. Stop, inspect the diff, undo the complete edit, redo, save and reopen. Check the saved page in Safari.
 
 In a separate disposable site, select a button, open **Interactions**, use **Pick** on the canvas and add an upload step followed by a text change. In Preview, cancel once and verify the readout stays put. Repeat with a disposable file and **Test upload**. Open an exported copy against a local HTTP test receiver, confirm the field name and bytes, and try one failed request followed by a retry. Record both the in-app and independent Safari outcomes.
+
+
+## Conditional calculation on macOS
+
+Choose **File → Try Power Meter Workflow**. Pick the voltage and current inputs on the canvas. Change the precision to three decimal places. Apply, undo, redo, save and reopen. Measure 12 V at 0.25 A and verify 3.000 W. Clear an input and repeat to reach the warning branch. Restore it and verify the warning clears. Export the HTML and repeat in Safari. Run group 14 in **File → Run Sample Checks…** for the automated native counterpart.

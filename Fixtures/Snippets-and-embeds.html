@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal notes · Green Shoe Garage</title>
+<style>
+  * { box-sizing: border-box }
+  body { max-width: 48rem; margin: auto; padding: clamp(1rem,4vw,3rem); background: #f7f5ed; color: #213b32; font: 1rem/1.5 system-ui }
+  h1,h2 { font: 600 2rem/1.1 Georgia,serif; margin: .5rem 0 } h1 { font-size: clamp(2.8rem,8vw,5rem) }
+  header { border-bottom: 3px solid #365147; padding-bottom: 1rem }
+  section { margin-top: 1rem; border: 1px solid #a7ac9b; background: #fffef7; padding: 1rem }
+  pre { color: #e1efcb; background: #243c34; padding: 1rem; border-radius: .3rem }
+  button { background: #2e5244; color: white; padding: .6rem .9rem; border: 0; border-radius: .35rem; font: inherit; cursor: pointer }
+  output { margin-inline-start: .5rem; font: bold 1.1rem monospace } iframe { max-width: 100%; border: 1px solid #849c8e }
+</style>
+</head>
+<body>
+<header><b>Green Shoe Garage</b><h1>Signal notes</h1><p>Inspect a pulse counter, try its button and adjust a signal inside an embedded instrument.</p></header>
+<section id="example"><h2>Code to copy</h2><pre style="max-width: 100%; overflow: auto;"><code>&lt;button type="button"&gt;Send pulse&lt;/button&gt;
+&lt;output&gt;0&lt;/output&gt;</code></pre></section>
+<section id="widget"><h2>Pulse counter</h2><div data-html-snippet><button type="button" id="send">Send pulse</button><output id="count" aria-live="polite">0</output>
+<script>
+  const count = document.getElementById("count");
+  document.getElementById("send").addEventListener("click", () => {
+    count.value = String(Number(count.value) + 1);
+  });
+</script></div></section>
+<section id="instrument"><h2>Signal generator</h2><iframe title="Signal level control" width="520" height="115" sandbox="allow-scripts" srcdoc="&lt;!doctype html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;style&gt;body{font:16px system-ui;background:#e5efdf;color:#193f32;padding:1rem}label{display:block}input{width:74%;accent-color:#346944}output{font: bold 18px monospace}&lt;/style&gt;&lt;label for=&quot;signal&quot;&gt;Signal level&lt;/label&gt;&lt;input id=&quot;signal&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;100&quot; value=&quot;50&quot;&gt;&lt;output id=&quot;level&quot;&gt;50%&lt;/output&gt;&lt;script&gt;const signal=document.getElementById(&quot;signal&quot;);signal.oninput=()=&gt;document.getElementById(&quot;level&quot;).value=signal.value+&quot;%&quot;;&lt;/script&gt;&lt;/html&gt;"></iframe></section>
+</body>
+</html>

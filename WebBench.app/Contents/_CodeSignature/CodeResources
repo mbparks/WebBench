@@ -4,9 +4,17 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>Resources/Fixtures/Device-workbench.html</key>
+		<data>
+		+N2nNLApYUujD9Cx5Yoa1XQC3XE=
+		</data>
 		<key>Resources/Fixtures/Field-Instrument.html</key>
 		<data>
 		kRjFggme18Ru1pkt03PaLVseidk=
+		</data>
+		<key>Resources/Fixtures/Power-meter.html</key>
+		<data>
+		3kgETetA3GziBnPT8D6MaNZAFMQ=
 		</data>
 		<key>Resources/Fixtures/Signal-check.html</key>
 		<data>
@@ -32,13 +40,17 @@
 		<data>
 		2kw5Y8yzlKy0GYpVrODGDDTFA/A=
 		</data>
+		<key>Resources/Fixtures/Snippets-and-embeds.html</key>
+		<data>
+		BeVokUf/YEVXNNfUqIsSzMx7liQ=
+		</data>
 		<key>Resources/WebBench.icns</key>
 		<data>
 		TsrraeQ2CKqwl5iwaXiWLSRcUKc=
 		</data>
 		<key>Resources/appearance.js</key>
 		<data>
-		z3LjID6xeVyoGs3wdoQeP2GCh1c=
+		eHHI2nqHw8Z1X7XmXY5r8RFjaHM=
 		</data>
 		<key>Resources/arrange.js</key>
 		<data>
@@ -58,11 +70,15 @@
 		</data>
 		<key>Resources/canvas.js</key>
 		<data>
-		yR1t8WPHN9vRYp3GBgJ1yksNdiQ=
+		GhndLbVrKSyCIMuUmEGpfIpwgvo=
 		</data>
 		<key>Resources/console.js</key>
 		<data>
-		GLAFQImJRhEB806/Y6GmP5E76bo=
+		iv+W1oqTSqYF9qfgHnoOneTt15s=
+		</data>
+		<key>Resources/device-runtime.js</key>
+		<data>
+		GFfuUI34K7bCL538Fs+xnLAFI7s=
 		</data>
 		<key>Resources/document.js</key>
 		<data>
@@ -78,7 +94,7 @@
 		</data>
 		<key>Resources/source.js</key>
 		<data>
-		gDEvpLCvuV36gCY3fdEv+J9fNWw=
+		3iXrpS1p9xSjTB4IvGc2Tybsp4E=
 		</data>
 		<key>Resources/studio.html</key>
 		<data>
@@ -86,7 +102,7 @@
 		</data>
 		<key>Resources/workflows.js</key>
 		<data>
-		GWY2G8FIzEzQT/kq5FPKjGCO/ek=
+		6umxc7iLcCSx0YqjSndcVnn0gA4=
 		</data>
 		<key>Resources/writing.js</key>
 		<data>
@@ -95,11 +111,25 @@
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>Resources/Fixtures/Device-workbench.html</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			EpGBoNg0GGUMz6t45+OkCxX6l9LuOXLWFsNj0RWBXOY=
+			</data>
+		</dict>
 		<key>Resources/Fixtures/Field-Instrument.html</key>
 		<dict>
 			<key>hash2</key>
 			<data>
 			Pmr586gr5XieefWmpwfiHXHd/9rZkocMF82uR5lvfv4=
+			</data>
+		</dict>
+		<key>Resources/Fixtures/Power-meter.html</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			xNTeRyvRYgtB0GxJA8ytanox4v7/B4kJZ64/fzVNQkU=
 			</data>
 		</dict>
 		<key>Resources/Fixtures/Signal-check.html</key>
@@ -144,6 +174,13 @@
 			2v63gROQYhKWtVOpIDLLr3Yp2Q2oVko/Tk0dVq5MwGc=
 			</data>
 		</dict>
+		<key>Resources/Fixtures/Snippets-and-embeds.html</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			w4kJhwDyjzY8+X+pais9sjZZzuA3wZ1/HhalrGmKJ7g=
+			</data>
+		</dict>
 		<key>Resources/WebBench.icns</key>
 		<dict>
 			<key>hash2</key>
@@ -155,7 +192,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			ssgebofTODfGauvz5uU9YwG2UqVrulZRp9dhzxAyvvI=
+			B9ZMC7JpOjo+vAt+B5kJP5/JoBFMm/qUa+zXnwSByUU=
 			</data>
 		</dict>
 		<key>Resources/arrange.js</key>
@@ -190,14 +227,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			fGYLAbRUtXcXf4yhVeo76CQUPzDNMRbrC2c3xH8QqOk=
+			XbbIoI9Iez5ODStXmA1tgYgIST+rwDuM5xc82WcJk/c=
 			</data>
 		</dict>
 		<key>Resources/console.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			bH+0Y+ij4+RZqsKIQMSmSh3SLen9kdIRb5I3LkU48Ps=
+			539kLduaB4e0lcF1iv7oi8bXNJrRwAwqYHPegqC9wJQ=
+			</data>
+		</dict>
+		<key>Resources/device-runtime.js</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			LHHMG0Cn44omMFrVwugmqW4T/czfJeTCeBCnu7NvPg8=
 			</data>
 		</dict>
 		<key>Resources/document.js</key>
@@ -225,7 +269,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			wLgJYsJa0diyFMM5O/iKbzebo5KjOXeHFxTebmCc1wk=
+			xRELR4D1jxnsloI8VaUC1NVsRINIIRIfOtwp3BuD7xg=
 			</data>
 		</dict>
 		<key>Resources/studio.html</key>
@@ -239,7 +283,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			+ecCFwD8a9Ks1KdWxTmqGN9eB1P/dyd+XyoP7pWTZS0=
+			B5Mx75tTli+LZ2uSgAO1jpFYi6NCVEM+0nw7jLKprMU=
 			</data>
 		</dict>
 		<key>Resources/writing.js</key>

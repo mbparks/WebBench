@@ -165,7 +165,7 @@ final class Session: ObservableObject {
   func newStudioDraft(_ template: String = "canvas-page") {
     guard mayLeave() else { return }
     do {
-      let isInteractionExample = template == "Signal-check"
+      let isInteractionExample = ["Signal-check", "Power-meter", "Device-workbench"].contains(template)
       let data = Data(try Resources.string(template, "html", in: isInteractionExample ? "Fixtures" : nil).utf8)
       let dir = Self.supportDirectory.appendingPathComponent("Drafts").appendingPathComponent(
         UUID().uuidString)
@@ -255,6 +255,7 @@ final class Session: ObservableObject {
   @Published var paperColor = ""
   @Published var paperHasImage = false
   @Published var workflow: InteractionDraft?
+  @Published var snippetEditor: SnippetDraft?
   @Published var photoEditor: PhotoJob?
   @Published var iconEditor: FaviconEdit?
   func paintBackground(pageWide: Bool, color: String, keepImage: Bool) {
@@ -658,7 +659,10 @@ final class Session: ObservableObject {
     resumeCanvasFocus = true
     let before = data["before"] ?? NSNull()
     let point = data["point"] ?? NSNull()
-    if item == "Image" {
+    if let kind = SnippetKind(item: item) {
+      if preview?.writing == true { refresh() }
+      openSnippet(at: id, adding: kind, placement: ["before": before, "point": point])
+    } else if item == "Image" {
       if preview?.writing == true { refresh() }
       pickImage(at: id, before: before, point: point)
     } else {
@@ -1139,7 +1143,13 @@ final class Session: ObservableObject {
   }
 }
 
+struct ShapeSilhouette: Decodable {
+  let width: Double, height: Double
+  let radius: Double?, ellipse: Bool?, points: [[Double]]?
+}
+
 struct InsertElement: Identifiable, Decodable {
+  let shape: ShapeSilhouette?
   let id: String, title: String, group: String, symbol: String, tag: String
 }
 extension Session {

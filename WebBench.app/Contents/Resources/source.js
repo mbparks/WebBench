@@ -19,6 +19,53 @@ const WebBench = (() => {
   const raw = new Set('script style textarea title xmp iframe noembed noframes noscript'.split(' '));
   
   const panelStyle = 'box-sizing: border-box; min-width: min(240px, 100%); min-height: 96px; padding: 16px;';
+  // The parts drawer and the exported CSS use the same dimensions and silhouette.
+  const shapeNames = new Map();
+  function shape(title, width, height, color, geometry = {}, id = title) {
+    const {points, radius, ellipse} = geometry;
+    const style = ['width: ' + width + 'px', 'height: ' + height + 'px'];
+    if (ellipse) style.push('border-radius: 50%');
+    if (radius) style.push('border-radius: ' + radius + 'px');
+    style.push('background-color: ' + color);
+    if (points) style.push('clip-path: polygon(' + points.map(([x,y]) => x + '% ' + y + '%').join(', ') + ')');
+    let attributes = '';
+    if (!['Box','Circle','Line'].includes(id)) {
+      const name = 'shape-' + title.toLowerCase().replaceAll(' ', '-');
+      shapeNames.set(name,title);
+      attributes = ' class="' + name + '"';
+    }
+    const html = '<div' + attributes + ' style="' + style.join('; ') + ';"></div>';
+    const symbol = {Box:'square',Circle:'circle',Line:'minus'}[id] || 'square.on.circle';
+    return [id,title,symbol,html,{width,height,...geometry}];
+  }
+  const clay = '#bb754e', green = '#698a76', blue = '#678999', gold = '#bb984e', plum = '#976a84';
+  const arrow = [[0,30],[58,30],[58,0],[100,50],[58,100],[58,70],[0,70]];
+  const shapes = [
+    shape('Rectangle',160,96,'#d8e6dc',{},'Box'),
+    shape('Circle',96,96,clay,{ellipse:true}),
+    shape('Line',180,3,'#28483e'),
+    shape('Square',96,96,blue),
+    shape('Rounded rectangle',144,96,green,{radius:18}),
+    shape('Oval',144,88,plum,{ellipse:true}),
+    shape('Pill',144,64,gold,{radius:9999}),
+    shape('Triangle',112,96,clay,{points:[[50,0],[100,100],[0,100]]}),
+    shape('Right triangle',104,96,green,{points:[[0,0],[100,100],[0,100]]}),
+    shape('Diamond',112,96,blue,{points:[[50,0],[100,50],[50,100],[0,50]]}),
+    shape('Parallelogram',144,88,plum,{points:[[22,0],[100,0],[78,100],[0,100]]}),
+    shape('Trapezoid',144,88,gold,{points:[[22,0],[78,0],[100,100],[0,100]]}),
+    shape('Pentagon',104,100,green,{points:[[50,0],[100,38],[81,100],[19,100],[0,38]]}),
+    shape('Hexagon',112,96,blue,{points:[[25,0],[75,0],[100,50],[75,100],[25,100],[0,50]]}),
+    shape('Octagon',96,96,clay,{points:[[29,0],[71,0],[100,29],[100,71],[71,100],[29,100],[0,71],[0,29]]}),
+    shape('Star',110,104,gold,{points:[[50,0],[62,36],[100,38],[70,62],[81,100],[50,78],[19,100],[30,62],[0,38],[38,36]]}),
+    shape('Heart',108,96,plum,{points:[[50,19],[58,7],[67,2],[77,0],[86,3],[94,9],[99,19],[100,30],[97,42],[91,54],[79,69],[50,100],[21,69],[9,54],[3,42],[0,30],[1,19],[6,9],[14,3],[23,0],[33,2],[42,7]]}),
+    shape('Plus',96,96,green,{points:[[34,0],[66,0],[66,34],[100,34],[100,66],[66,66],[66,100],[34,100],[34,66],[0,66],[0,34],[34,34]]}),
+    shape('Right arrow',144,80,blue,{points:arrow}),
+    shape('Left arrow',144,80,blue,{points:arrow.map(([x,y]) => [100-x,y])}),
+    shape('Up arrow',80,144,blue,{points:arrow.map(([x,y]) => [y,100-x])}),
+    shape('Down arrow',80,144,blue,{points:arrow.map(([x,y]) => [100-y,x])}),
+    shape('Chevron',104,96,clay,{points:[[0,0],[50,0],[100,50],[50,100],[0,100],[50,50]]}),
+    shape('Speech bubble',144,112,green,{points:[[0,0],[100,0],[100,76],[42,76],[19,100],[19,76],[0,76]]})
+  ];
   const groups = {
     Essentials: [
       ['Text box','Text','text.alignleft','<p style="margin: 0;">Text box</p>'],
@@ -35,9 +82,12 @@ const WebBench = (() => {
       ['Grid','Responsive grid','square.grid.2x2','<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 16px; '+panelStyle+'"></div>'],
       ['Design area','Free-position area','rectangle.dashed','<section data-design-canvas aria-label="Design area" style="position: relative; min-width: min(320px, 100%); min-height: 320px; isolation: isolate;"></section>'],
       ['Card','Project card','rectangle.on.rectangle','<article style="width: 264px; padding: 24px; border-radius: 12px; background-color: #f2efe6; color: #223e33;"><h2>Project title</h2><p>Add your project description.</p></article>'],
-      ['Box','Rectangle','square','<div style="width: 160px; height: 96px; background-color: #d8e6dc;"></div>'],
-      ['Circle','Circle','circle','<div style="width: 96px; height: 96px; border-radius: 50%; background-color: #bb754e;"></div>'],
-      ['Line','Line','minus','<div style="width: 180px; height: 3px; background-color: #28483e;"></div>']
+      ...shapes
+    ],
+    'Code & embeds': [
+      ['Code snippet','Code snippet','chevron.left.forwardslash.chevron.right','<pre><code>Code snippet</code></pre>'],
+      ['Custom HTML','Custom HTML','curlybraces','<div data-html-snippet>Custom HTML</div>'],
+      ['Iframe embed','Iframe embed','rectangle.on.rectangle','<iframe width="480" height="270" title="Iframe embed"></iframe>']
     ],
     Landmarks: [
       ['Header','Header','rectangle.topthird.inset.filled','<header><h2>Page header</h2></header>'],
@@ -86,7 +136,7 @@ const WebBench = (() => {
     ]
   };
   const items = Object.entries(groups).flatMap(([group, rows]) =>
-    rows.map(([id,title,symbol,html])=>({id,title,symbol,group,html,tag:/^<(\w+)/.exec(html)[1]})));
+    rows.map(([id,title,symbol,html,shape])=>({id,title,symbol,group,html,...(shape ? {shape} : {}),tag:/^<(\w+)/.exec(html)[1]})));
   const palette = Object.fromEntries(items.map(i=>[i.id,i.html]));
   const catalog = () => items.map(({html,...item})=>item);
   const flowParents = 'body main section div article aside nav header footer form li fieldset figure figcaption address blockquote td th details dialog dd'.split(' ');
@@ -175,12 +225,154 @@ const WebBench = (() => {
     for(let a=n;a;a=ix.nodes[a.parent]) if(['svg','math','template','noscript'].includes(a.tag))fail('Edit embedded or conditional markup in Code.');
     return {n,ix};
   }
+  const snippetKind = n => n.tag==='iframe' ? 'iframe' : n.tag==='pre' ? 'code'
+    : n.tag==='div' && n.attrs['data-html-snippet'] ? 'html' : null;
+
+  // Decode only text that can be mapped without a browser entity table.
+  function plainValue(value, spans) {
+    const named = {amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:'\u00a0'};
+    let delta=0;
+    return value.replace(/&(#(?:x[\da-f]+|\d+)|[a-z][a-z\d]*)(;?)/gi,(raw,name,semi,at)=>{
+      const record=decoded=>{
+        if(spans) spans.push({raw:at,offset:at-delta,length:raw.length,decoded:decoded.length});
+        delta+=raw.length-decoded.length;
+        return decoded;
+      };
+      if (name[0]==='#') {
+        const hex=name[1].toLowerCase()==='x';
+        const cp=parseInt(name.slice(hex?2:1),hex?16:10);
+        if (cp>0 && cp<=0x10ffff && !(cp>=0xd800 && cp<=0xdfff) && !(cp>=128 && cp<=159)) return record(String.fromCodePoint(cp));
+        fail('This character reference needs Code view.');
+      }
+      if (semi && Object.hasOwn(named,name)) return record(named[name]);
+      if (semi || Object.hasOwn(named,name)) fail('This character reference needs Code view.');
+      return raw;
+    });
+  }
+  function replaceLiteral(raw, text) {
+    const spans=[], old=plainValue(raw,spans);
+    let start=0, end=old.length, nextEnd=text.length;
+    while(start<end && start<nextEnd && old[start]===text[start]) start++;
+    while(end>start && nextEnd>start && old[end-1]===text[nextEnd-1]) { end--;nextEnd--; }
+    // Keep a changed Unicode scalar together when a shared prefix or suffix split its pair.
+    if(start>0 && /[\uDC00-\uDFFF]/.test(old.charAt(start))) start--;
+    if(end<old.length && /[\uDC00-\uDFFF]/.test(old.charAt(end))) { end++;nextEnd++; }
+    const rawOffset=offset=>{
+      let pos=offset;
+      for(const entity of spans) {
+        if(entity.offset>=offset) break;
+        pos+=entity.length-entity.decoded;
+      }
+      return pos;
+    };
+    return splice(raw,rawOffset(start),rawOffset(end),escapeText(text.slice(start,nextEnd)));
+  }
+  function codeNode(s,ix,n) {
+    const children=ix.nodes.filter(child=>child.parent===n.id);
+    if(children.length===1 && children[0].tag==='code' && !s.slice(n.open,children[0].start).trim() && !s.slice(children[0].end,n.close).trim()) return children[0];
+    if(!children.length) return n;
+    fail('This code block contains nested markup. Edit it in Code to preserve its formatting.');
+  }
+  function snippetDetails(s,id) {
+    const {ix,n}=mapped(s,id), kind=snippetKind(n);
+    if(kind==='iframe') {
+      let url='',title='',fields=!n.attrs.srcdoc;
+      try {url=plainValue(n.attrs.src?.value||'');title=plainValue(n.attrs.title?.value||'');}
+      catch {fields=false;}
+      return {kind,text:s.slice(n.start,n.end),url,title,fields};
+    }
+    if(kind==='html') return {kind,text:s.slice(n.open,n.close)};
+    if(kind==='code') {
+      const code=codeNode(s,ix,n), inner=s.slice(code.open,code.close);
+      if(inner.includes('<')) fail('This code block contains markup. Edit it in Code to preserve its formatting.');
+      return {kind,text:plainValue(inner)};
+    }
+    fail('Select an iframe, code block or custom HTML snippet.');
+  }
+  function checkedHTML(text,frame) {
+    if(!text.trim()) fail(frame?'Paste the iframe embed code.':'Enter the HTML fragment.');
+    const ix=index(text);
+    if(ix.error) fail(ix.error);
+    if(ix.nodes.some(n=>['html','head','body','base','plaintext','frameset','frame'].includes(n.tag))) fail('Use a body fragment here. Edit document structure in Code.');
+    if(frame) {
+      const node=ix.nodes[0];
+      if(ix.nodes.length!==1 || node.tag!=='iframe' || text.slice(0,node.start).trim() || text.slice(node.end).trim())
+        fail('Paste one complete iframe. For a provider snippet with extra elements or scripts, use Custom HTML.');
+      if(!node.attrs.src && !node.attrs.srcdoc) fail('The iframe needs a src or srcdoc attribute.');
+    }
+  }
+  function frameURL(value) {
+    const u=value.trim();
+    if (/^https?:/i.test(u) && !/^https?:\/\/[^/?#\s]+/i.test(u)) fail('Enter the full embed URL, including its host.');
+    if (!u || /[\u0000-\u0020\\]/.test(u) || /^(?!https?:)[a-z][\w+.-]*:/i.test(u) || /^(?:https?:)?\/\/(?![^/?#\s]+)/i.test(u))
+      fail('Enter an HTTP(S) embed address or a project-relative path. Encode spaces as %20.');
+    return u;
+  }
+  function editSnippet(s,id,op) {
+    const {ix,n}=mapped(s,id);
+    const editing=op.existing===true, kind=op.type, text=op.text;
+    if(typeof text!=='string' || !['code','html','iframe'].includes(kind)) fail('Unknown snippet type.');
+    const current=editing ? snippetDetails(s,id) : null;
+    if(editing && current.kind!==kind) fail('The selected snippet changed. Reopen it.');
+    const unchanged=()=>({text:s,focus:n.start});
+    let markup;
+    if(kind==='code') {
+      if(editing && text===current.text) return unchanged();
+      if(!text.length) fail('Enter the code you want visitors to read.');
+      if(editing) {
+        const code=codeNode(s,ix,n);
+        return {text:splice(s,code.open,code.close,replaceLiteral(s.slice(code.open,code.close),text)),focus:n.start};
+      }
+      markup='<pre style="max-width: 100%; overflow: auto;"><code>'+escapeText(text)+'</code></pre>';
+    } else if(kind==='html') {
+      if(editing && text===current.text) return unchanged();
+      checkedHTML(text,false);
+      if(editing) {
+        checkParent(ix,n,'div',index(text).nodes);
+        return verifyParent(splice(s,n.open,n.close,text),n.start,ix.nodes[n.parent]?.start);
+      }
+      markup='<div data-html-snippet>'+text+'</div>';
+    } else if(op.fields) {
+      if(editing && !current.fields) fail('Use Embed code to edit this iframe.');
+      if(editing && op.url===current.url && op.title===current.title) return unchanged();
+      const url=frameURL(op.url), title=op.title;
+      if(typeof title!=='string' || !title.trim()) fail('Give the iframe an accessible title.');
+      markup=editing ? current.text : '<iframe width="480" height="270" style="max-width: 100%; border: 0;"></iframe>';
+      if(!editing || url!==current.url) markup=attribute(markup,index(markup).nodes[0],'src',url);
+      if(!editing || title!==current.title) markup=attribute(markup,index(markup).nodes[0],'title',title);
+    } else {
+      if(editing && text===current.text) return unchanged();
+      checkedHTML(text,true);
+      markup=text;
+    }
+    if(editing) return verifyParent(splice(s,n.start,n.end,markup),n.start+index(markup).nodes[0].start,ix.nodes[n.parent]?.start);
+    return insert(s,id,markup,op.before,op.point);
+  }
+  function designFrame(s,n,marker) {
+    // Keep the real element for layout and selection. Only the preview gets the inert document.
+    const keep=['class','id','title','aria-label','style','width','height','align','frameborder','hidden'];
+    const attrs=keep.filter(key=>n.attrs[key]).map(key=>{
+      const a=n.attrs[key], q=a.quote||'"';
+      return ' '+key+'='+q+(a.quote?a.value:a.value.replace(/"/g,'&quot;'))+q;
+    }).join('');
+    // Mirror the original src for the attribute inspector without making it a loadable URL.
+    const src=n.attrs.src;
+    const sourceHint=src ? ' '+marker+'-src="'+src.value.replace(/"/g,'&quot;')+'"' : '';
+    const label=n.attrs.title?.value || (n.attrs.srcdoc?'Inline document':n.attrs.src?.value || 'Embedded page');
+    let caption;
+    try {caption=escapeText(plainValue(label));} catch {caption=escapeText(label);}
+    const card='<meta charset="utf-8"><style>*{box-sizing:border-box}html,body{height:100%;margin:0}body{display:grid;place-content:center;text-align:center;padding:8px;background:#ebf0e9;color:#244c3b;font:14px system-ui;overflow:hidden}b{font-size:17px}span{overflow-wrap:anywhere}</style><b>Iframe embed</b><span>'+caption+'</span>';
+    return '<iframe '+marker+'="'+n.id+'"'+attrs+sourceHint+' tabindex="-1" sandbox srcdoc="'+escapeAttr(card)+'"></iframe>';
+  }
   function info(s, marker) {
     const ix=index(s); let html=s;
     if(!ix.error && marker) {
       if(s.toLowerCase().includes(marker))fail('Preview marker collision.');
       const pieces=[];let pos=0;
       for(const n of ix.nodes) {
+        if(n.tag==='iframe') {
+          pieces.push(s.slice(pos,n.start),designFrame(s,n,marker)); pos=n.end; continue;
+        }
         const at=n.start+1+n.tag.length;pieces.push(s.slice(pos,at),' '+marker+'="'+n.id+'"');pos=at;
       }
       pieces.push(s.slice(pos));html=pieces.join('');
@@ -188,8 +380,10 @@ const WebBench = (() => {
     return {html,error:ix.error,nodes:ix.nodes.map(n=>({id:n.id,parent:n.parent,depth:n.depth,tag:n.tag,
       label:n.tag+(n.attrs.id?'#'+n.attrs.id.value:'')+(n.attrs.class?'.'+n.attrs.class.value.trim().split(/\s+/).join('.'):''),
       name:(n.attrs['aria-label']?.value || n.attrs.alt?.value || n.attrs.id?.value ||
+        (n.tag==='iframe' ? n.attrs.title?.value || 'Iframe embed' : n.attrs['data-html-snippet'] ? 'Custom HTML' : '') ||
+        shapeNames.get(n.attrs.class?.value.trim().split(/\s+/).find(name => shapeNames.has(name))) ||
         (/^(h[1-6]|p|a|button|label|li|output)$/.test(n.tag) ? s.slice(n.open,Math.min(n.close,n.open+55)).split('<')[0].trim() : '') || n.tag),
-      start:n.start,length:n.open-n.start}))};
+      ...(snippetKind(n) ? {snippet:snippetKind(n)} : {}),start:n.start,length:n.open-n.start}))};
   }
   function attribute(s,n,key,value) {
     if(!/^(id|class|title|href|src|alt|type|sizes|value|for|aria-label|style)$/.test(key))fail('Edit this attribute in Code.');
@@ -239,9 +433,12 @@ const WebBench = (() => {
       let style=declaration(child.attrs.style?.value || '', 'position','absolute');
       style=declaration(style,'left',Math.round(atPoint.x)+'px');
       style=declaration(style,'top',Math.round(atPoint.y)+'px');
-      markup=attribute(markup,child,'style',style);
+      // All inserted values above are numeric positions. Preserve existing HTML entities in the style.
+      const attr=child.attrs.style;
+      markup=attr ? splice(markup,attr.start,attr.end,attr.quote ? style : '"'+style.replace(/"/g,'&quot;')+'"')
+                  : attribute(markup,child,'style',style);
     }
-    return verifyParent(splice(s,at,at,markup),at,n.start);
+    return verifyParent(splice(s,at,at,markup),at+parts[0].start,n.start);
   }
   // Scan CSS structural delimiters without interpreting strings, comments, URLs, or functions as syntax.
   function boundaries(s, delimiters) {
@@ -369,6 +566,7 @@ const WebBench = (() => {
     const {n,ix}=mapped(s,id);
     if(op.band && ['frame','selectionFrames','move'].includes(op.kind))return deviceFrame(s,id,op,n,ix);
     switch(op.kind) {
+      case 'snippet': return editSnippet(s,id,op);
       case 'pageTitle': {
         const titles=ix.nodes.filter(row=>row.tag==='title' && ix.nodes[row.parent]?.tag==='head');
         const head=ix.nodes.find(row=>row.tag==='head');
@@ -688,6 +886,6 @@ const WebBench = (() => {
     const n=ix.nodes.filter(n=>n.tag==='style')[o.styleIndex];if(!n)fail('Stylesheet moved.');
     return splice(source,n.open,n.close,editRule(source.slice(n.open,n.close),o.path,o.selector,o.prop,o.value));
   }
-  return {index,rows:s=>{const result=info(s);if(result.error)fail(result.error);return result.nodes;},info,run,style,replaceRule,ruleRange,scripts,palette,catalog,accepts,tagFor,parentRules:()=>rules,icons,setIcon,backgrounds,paintCSS};
+  return {index,snippetDetails,rows:s=>{const result=info(s);if(result.error)fail(result.error);return result.nodes;},info,run,style,replaceRule,ruleRange,scripts,palette,catalog,accepts,tagFor,parentRules:()=>rules,icons,setIcon,backgrounds,paintCSS};
 })();
 if(typeof module!=='undefined')module.exports=WebBench;

@@ -79,7 +79,9 @@ struct PartCard: View {
       VStack(alignment: .leading, spacing: 4) {
         HStack {
           Group {
-            if part.id == "Heading" {
+            if let shape = part.shape {
+              PaletteSilhouette(geometry: shape).fill(accent).frame(width: 22, height: 18)
+            } else if part.id == "Heading" {
               Text("Aa").font(.system(size: 22, weight: .medium, design: .serif))
             } else {
               Image(systemName: part.symbol).font(.system(size: 17, weight: .medium))
@@ -107,6 +109,28 @@ struct PartCard: View {
       PaletteTile(item: part.id, title: part.title, symbol: part.symbol, model: model)
     }
     .frame(height: 63).onHover { hovering = $0 }
+  }
+}
+
+private struct PaletteSilhouette: Shape {
+  let geometry: ShapeSilhouette
+
+  func path(in bounds: CGRect) -> Path {
+    let scale = min(bounds.width / geometry.width, bounds.height / geometry.height)
+    let width = geometry.width * scale, height = max(1.5, geometry.height * scale)
+    let rect = CGRect(x: bounds.midX - width / 2, y: bounds.midY - height / 2, width: width, height: height)
+    if geometry.ellipse == true { return Path(ellipseIn: rect) }
+    if let vertices = geometry.points {
+      var path = Path()
+      for (i, vertex) in vertices.enumerated() {
+        let point = CGPoint(x: rect.minX + width * vertex[0] / 100, y: rect.minY + height * vertex[1] / 100)
+        if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
+      }
+      path.closeSubpath()
+      return path
+    }
+    let radius = min((geometry.radius ?? 0) * scale, min(width, height) / 2)
+    return Path(roundedRect: rect, cornerRadius: radius, style: .circular)
   }
 }
 

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DC Power Meter · Green Shoe Garage</title>
+  <style>
+    :root { color-scheme: light; font: 100%/1.45 system-ui, sans-serif; color: #193d32; background: #dfe6de; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: clamp(1rem, 6vw, 4rem) 1rem; }
+    main { max-width: 38rem; margin: auto; background: #fffdf3; padding: clamp(1.25rem, 4vw, 2.5rem); border: 1px solid #a3b7a7; border-top: .45rem solid #315d48; border-radius: .65rem; }
+    header p { margin: 0; font-weight: 650; font-size: .82rem; color: #516b5c; }
+    h1 { margin: .3rem 0 1.25rem; font: 500 clamp(2rem, 7vw, 3.6rem)/1.05 Georgia, serif; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+    label { display: grid; gap: .3rem; font-weight: 600; }
+    input, button { font: inherit; }
+    input { width: 100%; padding: .5rem .6rem; border-radius: .3rem; border: 1px solid #92a89a; color: inherit; background: white; }
+    button { cursor: pointer; padding: .55rem 1rem; border-radius: .35rem; border: 1px solid #315d48; color: #fff; background: #315d48; font-weight: 650; }
+    .readout { margin: 1.2rem 0; padding: 1rem 1.2rem; background: #233e32; border-radius: .4rem; color: #d5efae; }
+    .readout label { font-size: .82rem; }
+    output { display: block; font: 600 clamp(1.4rem, 6vw, 2.4rem)/1.3 ui-monospace, monospace; overflow-wrap: anywhere; }
+    output.warning { color: #ffd5a9; font-size: 1.1rem; }
+    details { margin-top: 1.35rem; border-top: 1px solid #d2dccd; padding-top: .8rem; }
+    summary { cursor: pointer; }
+    @media (max-width: 26rem) { .fields { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><p>Green Shoe Garage · Field Instruments</p><h1>DC Power Meter</h1></header>
+    <form id="meter">
+      <div class="fields">
+        <label>Voltage (V)<input id="volts" type="number" required step="any" value="12"></label>
+        <label>Current (A)<input id="amps" type="number" required step="any" value="0.25"></label>
+      </div>
+      <div class="readout"><label for="power">Electrical power</label><output id="power" for="volts amps" aria-live="polite">— W</output></div>
+      <button id="test" type="submit">Measure power</button>
+    </form>
+    <details><summary>How power is calculated</summary><p>Multiply voltage in volts by current in amperes to get power in watts. For example, 12 V × 0.25 A = 3 W.</p></details>
+  </main>
+<script data-webbench-workflow="measure-dc-power">
+// WebBench interaction {"version":2,"trigger":"test","event":"click","preventDefault":true,"steps":[{"kind":"calculate","target":"power","value":"multiply","detail":" W","input":"volts","operand":"amps","digits":2,"invalid":"The result is outside the meter’s range."},{"kind":"classChange","target":"power","value":"remove","detail":"warning"}],"condition":{"source":"meter","test":"valid","value":""},"otherwise":[{"kind":"text","target":"power","value":"Enter a voltage and a current.","detail":""},{"kind":"classChange","target":"power","value":"add","detail":"warning"}]}
+(() => {
+  function element(id) {
+    const node = document.getElementById(id);
+    if (!node) throw new Error("Missing interaction element #" + id);
+    return node;
+  }
+  function readValue(node) {
+    if (node.matches('input[type="file"]')) return node.files[0]?.name || "";
+    if (node.matches('input[type="checkbox"], input[type="radio"]')) return node.checked ? node.value : "";
+    return node.matches("input, select, textarea, output") ? node.value : node.textContent;
+  }
+  function readNumber(value) {
+    const text = String(value).trim();
+    const number = Number(text);
+    return Number.isFinite(number) && /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(text) ? number : NaN;
+  }
+  function setText(node, text) {
+    if (node.matches("input, textarea, output")) node.value = text;
+    else node.textContent = text;
+  }
+  if (!document.getElementById("test")) return;
+  document.getElementById("test").addEventListener("click", async event => {
+    event.preventDefault();
+    try {
+      if (element("meter").matches(":valid")) {
+        {
+          const first = readNumber(readValue(element("volts")));
+          const second = readNumber(readValue(element("amps")));
+          const result = first * second;
+          if (![first, second, result].every(Number.isFinite)) {
+            setText(element("power"), "The result is outside the meter’s range.");
+            return;
+          }
+          setText(element("power"), result.toFixed(2) + " W");
+        }
+        element("power").classList.remove("warning");
+      } else {
+        setText(element("power"), "Enter a voltage and a current.");
+        element("power").classList.add("warning");
+      }
+    } catch (error) {
+      console.error("WebBench interaction", error);
+    }
+  });
+})();
+</script></body>
+</html>

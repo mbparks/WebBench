@@ -14,6 +14,9 @@
   addEventListener('click',e=>{if(e.altKey){e.preventDefault();e.stopImmediatePropagation();send('runtime DOM',[e.target.localName,e.target.id||'', 'Preview only']);}},true);
   // Weakly track elements introduced after the document parser has completed.
   addEventListener('DOMContentLoaded',()=>{
+    const remote=Array.from(document.querySelectorAll('iframe[src]')).some(frame=>
+      !frame.hasAttribute('srcdoc') && /^https?:/i.test(frame.src));
+    if(remote) send('embed',['Online frames use File → Preview Website in Browser. This Preview stays offline.']);
     const added=new WeakSet();
     const observer=new MutationObserver(records=>{for(const r of records)for(const n of r.addedNodes)if(n.nodeType===1){added.add(n);for(const child of n.querySelectorAll('*'))added.add(child);}});
     observer.observe(document,{childList:true,subtree:true});

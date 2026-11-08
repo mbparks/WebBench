@@ -41,6 +41,7 @@ final class Engine {
   private let api: JSValue
   init() throws {
     context.evaluateScript(try Resources.string("source", "js"))
+    context.setObject(try Resources.string("device-runtime", "js"), forKeyedSubscript: "WebBenchDeviceCode" as NSString)
     context.evaluateScript(try Resources.string("workflows", "js"))
     guard let api = context.evaluateScript("WebBench"), !api.isUndefined else {
       throw BenchError("Source engine failed to load.")
