@@ -60,7 +60,8 @@ struct PhotoTarget {
   let token: String, id: Int, before: Any, point: Any, replace: Bool
 }
 struct PhotoJob: Identifiable {
-  let id = UUID(), input: PhotoInput, target: PhotoTarget, budget: Int, resizeOffer: Bool
+  let id = UUID()
+  let input: PhotoInput, target: PhotoTarget, budget: Int, resizeOffer: Bool
 }
 struct PhotoResult {
   let image: CGImage, bytes: Data, ext: String

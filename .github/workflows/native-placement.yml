@@ -13,7 +13,7 @@ jobs:
       - name: Build universal WebBench
         run: |
           xcodebuild -version
-          xcodebuild -project WebBench.xcodeproj -scheme WebBench -configuration Release -destination 'generic/platform=macOS' -derivedDataPath "$RUNNER_TEMP/product" ONLY_ACTIVE_ARCH=NO ARCHS="arm64 x86_64" CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/build.log" || { tail -100 "$RUNNER_TEMP/build.log"; exit 1; }
+          xcodebuild -project WebBench.xcodeproj -scheme WebBench -configuration Release -destination 'generic/platform=macOS' -derivedDataPath "$RUNNER_TEMP/product" ONLY_ACTIVE_ARCH=NO ARCHS="arm64 x86_64" CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/build.log" || { grep -E '(error:|warning:)' "$RUNNER_TEMP/build.log" | sort -u; exit 1; }
           app="$RUNNER_TEMP/product/Build/Products/Release/WebBench.app"
           codesign --force --sign - --options runtime "$app"
           codesign --verify --deep --strict "$app"
@@ -26,7 +26,7 @@ jobs:
       - name: Test installed canvas
         run: |
           set -o pipefail
-          xcodebuild test -project WebBench.xcodeproj -scheme WebBench -destination 'platform=macOS' -parallel-testing-enabled NO -derivedDataPath "$RUNNER_TEMP/tests" -resultBundlePath "$RUNNER_TEMP/Placement.xcresult" -only-testing:WebBenchTests/WebBenchMacTests/testPaletteButtonPreviewFromNativeWindow 2>&1 | tee "$RUNNER_TEMP/placement.log"
+          xcodebuild test -project WebBench.xcodeproj -scheme WebBench -destination 'platform=macOS' -parallel-testing-enabled NO -derivedDataPath "$RUNNER_TEMP/tests" -resultBundlePath "$RUNNER_TEMP/Placement.xcresult" -only-testing:WebBenchMacTests/WebBenchMacTests/testPaletteButtonPreviewFromNativeWindow 2>&1 | tee "$RUNNER_TEMP/placement.log"
           grep -Eq 'Executed [1-9][0-9]* tests?, with 0 failures' "$RUNNER_TEMP/placement.log"
       - uses: actions/upload-artifact@v4
         if: always()

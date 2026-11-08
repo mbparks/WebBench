@@ -205,6 +205,60 @@ final class WebBenchMacTests: XCTestCase {
     XCTAssertNotNil(m.preview)
     XCTAssertTrue(m.sourceIssue.isEmpty)
   }
+  func testPaletteButtonPreviewFromNativeWindow() async throws {
+    let original = try Resources.string("canvas-page", "html")
+    let model = session(original)
+    model.snap = false
+    let host = NSHostingView(rootView: WorkspaceView(m: model))
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 800),
+                          styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+    window.contentView = host
+    window.isReleasedWhenClosed = false
+    window.makeKeyAndOrderFront(nil)
+    defer { window.orderOut(nil) }
+    func find<T: NSView>(_ type: T.Type, in view: NSView, where matches: (T) -> Bool) -> T? {
+      if let candidate = view as? T, matches(candidate) { return candidate }
+      for child in view.subviews {
+        if let found = find(type, in: child, where: matches) { return found }
+      }
+      return nil
+    }
+    func waitFor(_ condition: () -> Bool) async throws {
+      for _ in 0..<160 {
+        if condition() { return }
+        try await Task.sleep(nanoseconds: 50_000_000)
+      }
+    }
+    try await waitFor { model.designer?.ready == true }
+    let web = try XCTUnwrap(find(WKWebView.self, in: host, where: { _ in true }), model.status)
+    let diagnostic = try? await web.checkValue(
+      "[location.href,document.title,document.readyState,typeof WB,typeof WebBench,typeof LayoutDrop,typeof window.webBenchTools,document.body?.outerHTML.slice(0,180)].join(' | ')",
+      in: .defaultClient)
+    guard model.designer?.ready == true else {
+      XCTFail("Design did not start. " + model.status + " " + String(describing: diagnostic))
+      return
+    }
+    let tile = try XCTUnwrap(find(PaletteTile.Tile.self, in: host, where: { $0.item == "Button" }))
+    let origin = tile.convert(NSPoint(x: tile.bounds.midX, y: tile.bounds.midY), to: nil)
+    let drop = web.convert(NSPoint(x: web.bounds.midX, y: web.bounds.midY), to: nil)
+    func send(_ type: NSEvent.EventType, at point: NSPoint) throws {
+      let event = try XCTUnwrap(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+        context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+      window.sendEvent(event)
+    }
+    try send(.leftMouseDown, at: origin)
+    try send(.leftMouseDragged, at: drop)
+    try await Task.sleep(nanoseconds: 250_000_000)
+    let ghost = try await web.checkValue("!!document.querySelector('body > button[inert]')", in: .defaultClient)
+    XCTAssertEqual(ghost as? Bool, true, "Hover failed. " + model.status)
+    XCTAssertEqual(model.currentText, original)
+    try send(.leftMouseUp, at: drop)
+    try await waitFor { model.nodes.contains { $0.tag == "button" } }
+    XCTAssertTrue(model.currentText.contains("position: absolute"), model.status)
+    XCTAssertEqual(model.nodes.filter { $0.tag == "button" }.count, 1, model.status)
+  }
+
   func testEditIsInertAndRunCannotSeeDesignChannel() async throws {
     let html = """
       <!doctype html><html><head></head><body><button id="go">Test</button><output>idle</output>
