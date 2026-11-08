@@ -5,6 +5,88 @@
 	};
 	objectVersion = 56;
 	objects = {
+		627365A9BC38756E7BFBC56D = {
+			isa = "PBXFileReference";
+			lastKnownFileType = "sourcecode.swift";
+			path = "PaletteUITests.swift";
+			sourceTree = "<group>";
+		};
+		5778F76C10A0A59BB35F6DB7 = {
+			isa = "PBXBuildFile";
+			fileRef = "627365A9BC38756E7BFBC56D";
+		};
+		03E6DCD1AA31E6CD19292346 = {
+			isa = "PBXSourcesBuildPhase";
+			buildActionMask = 2147483647;
+			files = ("5778F76C10A0A59BB35F6DB7");
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A8908D14F85A765DF642DA2 = {
+			isa = "PBXFileReference";
+			explicitFileType = "wrapper.cfbundle";
+			includeInIndex = 0;
+			path = "WebBenchUITests.xctest";
+			sourceTree = "BUILT_PRODUCTS_DIR";
+		};
+		7B756AE5480102BF45BBB49E = {
+			isa = "PBXFrameworksBuildPhase";
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		938C96B9F9ED6875A275E7B6 = {
+			isa = "PBXTargetDependency";
+			target = "A172CEDCAE47474B615C54D5";
+			targetProxy = "D3B0D5AB899BE2D89C1BBD56";
+		};
+		D3B0D5AB899BE2D89C1BBD56 = {
+			isa = "PBXContainerItemProxy";
+			containerPortal = "244210E48437B6556980A702";
+			proxyType = 1;
+			remoteGlobalIDString = "A172CEDCAE47474B615C54D5";
+			remoteInfo = "WebBench";
+		};
+		5D6933F115387AD7430F3CB7 = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				"PRODUCT_NAME" = "WebBenchUITests";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.greenshoegarage.WebBench.uitests";
+				"CODE_SIGN_IDENTITY" = "-";
+				"TEST_TARGET_NAME" = "WebBench";
+				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/../Frameworks");
+			};
+			name = "Debug";
+		};
+		3FC4FCB40B184FB5D511D106 = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				"PRODUCT_NAME" = "WebBenchUITests";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.greenshoegarage.WebBench.uitests";
+				"CODE_SIGN_IDENTITY" = "-";
+				"TEST_TARGET_NAME" = "WebBench";
+				"LD_RUNPATH_SEARCH_PATHS" = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/../Frameworks");
+			};
+			name = "Release";
+		};
+		10B70B3ECF10C11D79E2B31F = {
+			isa = "XCConfigurationList";
+			buildConfigurations = ("5D6933F115387AD7430F3CB7", "3FC4FCB40B184FB5D511D106");
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Release";
+		};
+		1FAFC7694880FED062FB5AA9 = {
+			isa = "PBXNativeTarget";
+			buildConfigurationList = "10B70B3ECF10C11D79E2B31F";
+			buildPhases = ("03E6DCD1AA31E6CD19292346", "7B756AE5480102BF45BBB49E");
+			buildRules = ();
+			dependencies = ("938C96B9F9ED6875A275E7B6");
+			name = "WebBenchUITests";
+			productName = "WebBenchUITests";
+			productReference = "3A8908D14F85A765DF642DA2";
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		00B248FDB2C09BEB64739B86 = {
 			isa = "PBXFileReference";
 			lastKnownFileType = "sourcecode.swift";
@@ -241,7 +323,7 @@
 		};
 		D013AAAFC449A0BB5FF159B3 = {
 			isa = "PBXGroup";
-			children = ("4D58C662640B47BC3F555D35");
+			children = ("4D58C662640B47BC3F555D35", "627365A9BC38756E7BFBC56D");
 			sourceTree = "<group>";
 			path = "Tests/Mac";
 		};
@@ -445,7 +527,7 @@
 		};
 		0A3E27B8CA818264D75C8D81 = {
 			isa = "PBXGroup";
-			children = ("6754AF9632A2745E85C293E5", "21917804A68EC3AF77C9157C");
+			children = ("6754AF9632A2745E85C293E5", "21917804A68EC3AF77C9157C", "3A8908D14F85A765DF642DA2");
 			sourceTree = "<group>";
 			name = "Products";
 		};
@@ -613,7 +695,7 @@
 			productRefGroup = "0A3E27B8CA818264D75C8D81";
 			projectDirPath = "";
 			projectRoot = "";
-			targets = ("A172CEDCAE47474B615C54D5", "59830EBC3A4184110566BF1A");
+			targets = ("A172CEDCAE47474B615C54D5", "59830EBC3A4184110566BF1A", "1FAFC7694880FED062FB5AA9");
 		};
 	};
 	rootObject = "244210E48437B6556980A702";
