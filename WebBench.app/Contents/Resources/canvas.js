@@ -69,7 +69,14 @@
   const priority=(e,k)=>scoped?'important':e.style.getPropertyPriority(k);
   function currentBand(){return scoped?(innerWidth<=600?'phone':innerWidth<=1024?'tablet':'desktop'):'';}
 
-  window.webBenchScale=value=>{scale=Math.max(.1,Number(value)||1);chrome.style.setProperty('--hit',(22/scale)+'px');chrome.style.setProperty('--dot',(8/scale)+'px');outline();};
+  window.webBenchScale=value=>{
+    scale=Math.max(.1,Number(value)||1);
+    chrome.style.setProperty('--hit',(22/scale)+'px');
+    chrome.style.setProperty('--dot',(8/scale)+'px');
+    chrome.style.setProperty('--guide-title',(26/scale)+'px');
+    chrome.style.setProperty('--guide-caption',(13/scale)+'px');
+    outline();
+  };
   let free=false, snap=true, tool='', move=null, ignoreClick=false;
   let members=[], outlines=[];
   let selected=null, prop='margin-top', destination=null;
@@ -82,8 +89,8 @@
     const guideStyle=document.createElement('style');
     guideStyle.textContent=`
       .blank-guide{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;align-content:center;gap:13px;padding:22px;text-align:center;pointer-events:none;color:#253e34}
-      .blank-guide strong{font:normal clamp(23px,3.1vw,43px)/1.12 Georgia,serif;letter-spacing:-.04em;color:#213e32;background:#fffffff2;border-radius:6px;padding:2px 9px}
-      .blank-guide span{max-width:32em;font:500 clamp(13px,1.3vw,17px)/1.45 system-ui,sans-serif;color:#435d50;background:#fffffff2;border-radius:5px;padding:1px 6px}
+      .blank-guide strong{font:normal min(12vw,max(clamp(23px,3.1vw,43px),var(--guide-title,0px)))/1.12 Georgia,serif;letter-spacing:-.04em;color:#213e32;background:#fffffff2;border-radius:6px;padding:2px 9px}
+      .blank-guide span{max-width:32em;font:500 min(7vw,max(clamp(13px,1.3vw,17px),var(--guide-caption,0px)))/1.45 system-ui,sans-serif;color:#435d50;background:#fffffff2;border-radius:5px;padding:1px 6px}
       .sample-pieces{position:relative;width:172px;height:93px;margin-bottom:5px}
       .sample-pieces i{position:absolute;box-shadow:0 5px 9px #233e301b;border:1px solid #2b443932;border-radius:7px}
       .sample-photo{width:70px;height:67px;left:4px;top:18px;transform:rotate(-13deg);background:#adced1;overflow:hidden}
