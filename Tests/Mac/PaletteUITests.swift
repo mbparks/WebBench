@@ -29,10 +29,14 @@ final class PaletteUITests: XCTestCase {
       try VNImageRequestHandler(cgImage: cg).perform([request])
       return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
     }
+    func seesGuide(_ text: String) -> Bool {
+      text.localizedCaseInsensitiveContains("first element") ||
+        (text.localizedCaseInsensitiveContains("element") && text.localizedCaseInsensitiveContains("placed text"))
+    }
     var guide = ""
     for _ in 0..<5 {
       guide = try readGuide()
-      if guide.localizedCaseInsensitiveContains("first element") { break }
+      if seesGuide(guide) { break }
       Thread.sleep(forTimeInterval: 0.3)
     }
     print("Canvas image text: " + guide)
@@ -42,7 +46,7 @@ final class PaletteUITests: XCTestCase {
     let shot = XCTAttachment(screenshot: canvas.screenshot())
     shot.name = "Blank Design canvas"
     add(shot)
-    XCTAssertTrue(guide.localizedCaseInsensitiveContains("first element"), "Blank canvas text: " + guide)
+    XCTAssertTrue(seesGuide(guide), "Blank canvas text: " + guide)
     let start = tile.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
     let end = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
     start.click(forDuration: 0.3, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.4)

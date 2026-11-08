@@ -3,7 +3,7 @@ on:
   push:
     branches: [fix/native-palette-preview]
 permissions:
-  contents: read
+  contents: write
 jobs:
   mac:
     runs-on: macos-15
@@ -33,10 +33,27 @@ jobs:
           set -o pipefail
           xcodebuild test -project WebBench.xcodeproj -scheme WebBench -destination 'platform=macOS' -parallel-testing-enabled NO -derivedDataPath "$RUNNER_TEMP/tests" -resultBundlePath "$RUNNER_TEMP/Placement.xcresult" -only-testing:WebBenchMacTests/WebBenchMacTests/testPaletteButtonPreviewFromNativeWindow -only-testing:WebBenchUITests/PaletteUITests/testFirstButtonFromPackagedApp 2>&1 | tee "$RUNNER_TEMP/placement.log"
           grep -Eq 'Executed [1-9][0-9]* tests?, with 0 failures' "$RUNNER_TEMP/placement.log"
+      - name: Verify source and storage round trips
+        run: |
+          swift test --scratch-path "$RUNNER_TEMP/Storage"
+          node --test Tests/*.test.cjs
+          node Tests/roundtrip.cjs
+      - name: Include the tested app on the repair branch
+        if: github.ref == 'refs/heads/fix/native-palette-preview' && contains(github.event.head_commit.message, '[bundle]')
+        run: |
+          git add -f WebBench.app
+          git -c user.name="WebBench build" -c user.email="build@users.noreply.github.com" commit -m "Include the macOS-tested universal WebBench.app [skip ci]"
+          git push origin HEAD:refs/heads/fix/native-palette-preview
+      - name: Run the disposable acceptance projects
+        if: always()
+        run: |
+          set -o pipefail
+          xcodebuild test -project WebBench.xcodeproj -scheme WebBench -destination 'platform=macOS' -parallel-testing-enabled NO -derivedDataPath "$RUNNER_TEMP/tests" -resultBundlePath "$RUNNER_TEMP/Samples.xcresult" -only-testing:WebBenchMacTests/WebBenchMacTests/testPackagedSampleWorkflowChecks 2>&1 | tee "$RUNNER_TEMP/samples.log"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: native-placement-results
           path: |
+            ${{ runner.temp }}/samples.log
             ${{ runner.temp }}/placement.log
             ${{ runner.temp }}/Placement.xcresult

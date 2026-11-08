@@ -234,7 +234,9 @@ struct Site {
           continue
         }
         if v.isDirectory != true {
-          try read(file, String(file.path.dropFirst(root.path.count + 1)))
+          // Foundation may enumerate /private/var while the chosen root starts at /var.
+          let relative = file.pathComponents.suffix(en.level).joined(separator: "/")
+          try read(file, relative)
         }
       }
       if let failed { throw failed }
@@ -378,7 +380,7 @@ extension Site {
       guard info.isRegularFile == true, extensions.contains(url.pathExtension.lowercased()) else {
         continue
       }
-      let name = String(url.path.dropFirst(root.path.count + 1))
+      let name = url.pathComponents.suffix(walker.level).joined(separator: "/")
       guard files[name] == nil && !linkedAssets.contains(name) else { continue }
       let dest = try Self.safe(name, under: stage)
       try fm.createDirectory(

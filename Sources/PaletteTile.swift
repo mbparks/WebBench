@@ -109,6 +109,12 @@ struct PaletteTile: NSViewRepresentable {
       context == .withinApplication ? .copy : []
     }
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+      if let model, let token = dragToken {
+        let canvas = model.writing ? model.writer : model.designer
+        if canvas?.state.token == token {
+          canvas?.palette(item, phase: "cancel", screen: screenPoint, snap: false)
+        }
+      }
       dragToken = nil
     }
     override func mouseUp(with event: NSEvent) {
