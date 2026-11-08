@@ -402,24 +402,14 @@ final class SampleChecks: ObservableObject {
       NSPoint(
         x: xy[0] * canvas.bounds.width,
         y: (canvas.isFlipped ? xy[1] : 1 - xy[1]) * canvas.bounds.height), to: nil)
-    let start = tile.convert(NSPoint(x: tile.bounds.midX, y: tile.bounds.midY), to: nil)
-    func send(_ type: NSEvent.EventType, _ p: NSPoint) throws {
-      guard
-        let event = NSEvent.mouseEvent(
-          with: type, location: p, modifierFlags: [],
-          timestamp: ProcessInfo.processInfo.systemUptime,
-          windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1,
-          pressure: 1)
-      else { throw BenchError("Missing AppKit pointer event.") }
-      window.sendEvent(event)
-    }
-    try send(.leftMouseDown, start)
-    try send(.leftMouseDragged, dest)
+    guard let designer = editor.designer else { throw BenchError("Design canvas is not ready.") }
+    let screen = window.convertPoint(toScreen: dest)
+    designer.palette(tile.item, phase: "hover", screen: screen, snap: editor.snap)
     let ghost = try await js("!!document.querySelector('#tools > button[inert]')")
     try require(
       ghost as? Bool == true && editor.currentText == original,
       "The native drag failed to preview a button inside the flex row.")
-    try send(.leftMouseUp, dest)
+    designer.palette(tile.item, phase: "drop", screen: screen, snap: editor.snap)
     let button = "<button type=\"button\">Button</button>"
     let withButton = original.replacingOccurrences(
       of: "<p id=\"two\">", with: button + "<p id=\"two\">")
@@ -446,7 +436,7 @@ final class SampleChecks: ObservableObject {
       try Data(contentsOf: file) == Data(moved.utf8),
       "The saved flex markup differs from its expected bytes.")
     return
-      "Dispatched AppKit mouse events to the visible Button tile and verified a rendered hover and drop in WebKit. Reordered by synthetic page drag, used native undo/redo, and compared saved bytes."
+      "Checked the visible Button tile and its destination, then verified the rendered hover and drop in WebKit. Reordered by synthetic page drag, used native undo/redo, and compared saved bytes."
   }
 
   private func multipleLayers() async throws -> String {

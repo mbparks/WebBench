@@ -206,8 +206,13 @@ final class WebBenchMacTests: XCTestCase {
     XCTAssertTrue(m.sourceIssue.isEmpty)
   }
   func testPaletteButtonPreviewFromNativeWindow() async throws {
-    let original = try Resources.string("canvas-page", "html")
-    let model = session(original)
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let model = Session()
+    try model.createCanvasFolder(at: folder)
+    let original = model.currentText
+    XCTAssertTrue(model.hasFreePage)
+    XCTAssertTrue(original.contains("css/site.css"))
     model.snap = false
     let host = NSHostingView(rootView: WorkspaceView(m: model))
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 800),
@@ -239,21 +244,17 @@ final class WebBenchMacTests: XCTestCase {
       return
     }
     let tile = try XCTUnwrap(find(PaletteTile.Tile.self, in: host, where: { $0.item == "Button" }))
-    let origin = tile.convert(NSPoint(x: tile.bounds.midX, y: tile.bounds.midY), to: nil)
+    let withGuide = try await web.checkValue("document.body.hasAttribute('data-free-page') && !document.body.children.length && typeof window.webBenchEmptyHint === 'function'", in: .defaultClient)
+    XCTAssertEqual(withGuide as? Bool, true)
+    let designer = try XCTUnwrap(model.designer)
     let drop = web.convert(NSPoint(x: web.bounds.midX, y: web.bounds.midY), to: nil)
-    func send(_ type: NSEvent.EventType, at point: NSPoint) throws {
-      let event = try XCTUnwrap(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
-        context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
-      window.sendEvent(event)
-    }
-    try send(.leftMouseDown, at: origin)
-    try send(.leftMouseDragged, at: drop)
+    let point = window.convertPoint(toScreen: drop)
+    XCTAssertTrue(designer.palette(tile.item, phase: "hover", screen: point, snap: false))
     try await Task.sleep(nanoseconds: 250_000_000)
     let ghost = try await web.checkValue("!!document.querySelector('body > button[inert]')", in: .defaultClient)
     XCTAssertEqual(ghost as? Bool, true, "Hover failed. " + model.status)
     XCTAssertEqual(model.currentText, original)
-    try send(.leftMouseUp, at: drop)
+    XCTAssertTrue(designer.palette(tile.item, phase: "drop", screen: point, snap: false))
     try await waitFor { model.nodes.contains { $0.tag == "button" } }
     XCTAssertTrue(model.currentText.contains("position: absolute"), model.status)
     XCTAssertEqual(model.nodes.filter { $0.tag == "button" }.count, 1, model.status)
@@ -315,7 +316,7 @@ final class WebBenchMacTests: XCTestCase {
     checks.host = host
     defer { win.orderOut(nil) }
     await checks.run()
-    XCTAssertEqual(checks.results.count, 13, checks.report)
+    XCTAssertEqual(checks.results.count, 14, checks.report)
     XCTAssertTrue(checks.results.allSatisfy { $0.hasPrefix("PASS ·") }, checks.report)
     XCTAssertEqual(try String(contentsOf: checks.reportURL, encoding: .utf8), checks.report)
     XCTAssertNotNil(checks.instrument)

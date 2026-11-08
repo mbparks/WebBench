@@ -98,7 +98,37 @@ private final class ProjectScheme: NSObject, WKURLSchemeHandler {
 // Finder can provide the source URL directly. WebKit still resolves the destination on the canvas.
 private final class DesignWebView: WKWebView {
   private var droppedURL: URL?
+  weak var canvas: Canvas.Coordinator?
+  private func isPaletteDrag(_ sender: NSDraggingInfo) -> Bool {
+    sender.draggingPasteboard.types?.contains(PaletteTile.Tile.partType) == true
+  }
+  private func palette(_ sender: NSDraggingInfo, phase: String) -> Bool {
+    guard let canvas, let tile = sender.draggingSource as? PaletteTile.Tile, tile.model === canvas.model,
+      let data = sender.draggingPasteboard.propertyList(forType: PaletteTile.Tile.partType) as? [String: String],
+      data["token"] == canvas.state.token, let item = data["item"], let window
+    else { return false }
+    let screen = window.convertPoint(toScreen: sender.draggingLocation)
+    return canvas.palette(item, phase: phase, screen: screen,
+      snap: canvas.model.snap && !NSEvent.modifierFlags.contains(.option))
+  }
+  override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+    if isPaletteDrag(sender) { return palette(sender, phase: "hover") ? .copy : [] }
+    return super.draggingEntered(sender)
+  }
+  override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+    if isPaletteDrag(sender) { return palette(sender, phase: "hover") ? .copy : [] }
+    return super.draggingUpdated(sender)
+  }
+  override func draggingExited(_ sender: NSDraggingInfo?) {
+    if let sender, isPaletteDrag(sender) { _ = palette(sender, phase: "cancel"); return }
+    super.draggingExited(sender)
+  }
+  override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+    if isPaletteDrag(sender) { return canvas?.ready == true }
+    return super.prepareForDragOperation(sender)
+  }
   override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+    if isPaletteDrag(sender) { return palette(sender, phase: "drop") }
     let files =
       sender.draggingPasteboard.readObjects(
         forClasses: [NSURL.self],
@@ -164,16 +194,17 @@ struct Canvas: NSViewRepresentable {
           decoding: try JSONSerialization.data(withJSONObject: options), as: UTF8.self)
         let code = "const WB=" + json + ";\n" + script
         controller.add(c, contentWorld: .defaultClient, name: "design")
-        controller.addUserScript(
-          WKUserScript(
-            source: code, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient)
-        )
+        c.designBootstrap = "(() => {\n" + code + "\nreturn true;\n})()"
       }
-    } catch { DispatchQueue.main.async { model.alert(error.localizedDescription) } }
+    } catch { DispatchQueue.main.async { c.reportCanvasFailure(error.localizedDescription) } }
     let web =
       state.run
       ? WKWebView(frame: .zero, configuration: config)
       : DesignWebView(frame: .zero, configuration: config)
+    if let design = web as? DesignWebView {
+      design.canvas = c
+      design.registerForDraggedTypes(design.registeredDraggedTypes + [PaletteTile.Tile.partType])
+    }
     web.pageZoom = zoom
     if state.run { web.uiDelegate = c }
     web.navigationDelegate = c
@@ -189,7 +220,7 @@ struct Canvas: NSViewRepresentable {
     ) { [weak web] list, err in
       guard let web else { return }
       guard let list else {
-        model.status = err?.localizedDescription ?? "Offline preview filter failed."
+        c.reportCanvasFailure(err?.localizedDescription ?? "Offline preview filter failed.")
         return
       }
       web.configuration.userContentController.add(list)
@@ -197,7 +228,10 @@ struct Canvas: NSViewRepresentable {
       u.scheme = "webbench"
       u.host = "project"
       u.path = "/" + state.page
-      if let url = u.url { web.load(URLRequest(url: url)) }
+      if let url = u.url {
+        c.initialDocument = url
+        web.load(URLRequest(url: url))
+      }
     }
     return web
   }
@@ -218,7 +252,15 @@ struct Canvas: NSViewRepresentable {
     private var flowMode: Bool?
     weak var web: WKWebView?
     let model: Session, state: PreviewState
+    var designBootstrap: String?
+    var initialDocument: URL?
     var ready = false, last = ""
+    func reportCanvasFailure(_ reason: String) {
+      guard model.preview?.token == state.token else { return }
+      ready = false
+      model.canvasIssue = reason
+      model.status = reason
+    }
     var placement: Bool?, lastPageDrop: Bool?
     private var lastTool: String?, lastSnap: Bool?
     func lift(_ id: Int) { evaluate("webBenchLift", [id]) }
@@ -227,10 +269,10 @@ struct Canvas: NSViewRepresentable {
     func arrange(_ ids: [Int], command: String, dx: Double, dy: Double) {
       evaluate("webBenchArrange", [ids, command, dx, dy])
     }
-    func palette(_ item: String, phase: String, screen: NSPoint, snap: Bool) {
+    @discardableResult func palette(_ item: String, phase: String, screen: NSPoint, snap: Bool) -> Bool {
       guard ready, model.safeToEdit, !state.run, model.preview?.token == state.token,
         let web, let window = web.window, web.bounds.width > 0, web.bounds.height > 0
-      else { return }
+      else { return false }
       let p = web.convert(window.convertPoint(fromScreen: screen), from: nil)
       let u = (p.x - web.bounds.minX) / web.bounds.width
       let y = (p.y - web.bounds.minY) / web.bounds.height
@@ -241,6 +283,7 @@ struct Canvas: NSViewRepresentable {
           item, visible ? phase : "cancel", Double(u), Double(web.isFlipped ? y : 1 - y),
           model.freePlacement, snap,
         ])
+      return visible
     }
     private var receivingPhoto = false
     private func receivePhoto(key: String, name: String, size: Int, target: PhotoTarget) {
@@ -714,6 +757,15 @@ struct Canvas: NSViewRepresentable {
       }
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+      // Install the editor in the committed document's isolated world and observe startup errors.
+      if let designBootstrap, model.preview?.token == state.token {
+        webView.evaluateJavaScript(designBootstrap, in: nil, in: .defaultClient) { [weak self] result in
+          if case .failure(let error) = result {
+            let detail = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String
+            self?.reportCanvasFailure(detail ?? error.localizedDescription)
+          }
+        }
+      }
       // Page cards reuse the first rendered viewport. Visiting a site never starts extra page scripts.
       guard !state.run, !state.writing, model.selected == nil, model.pageImages[state.page] == nil,
         webView.bounds.width > 1, webView.bounds.height > 1
@@ -766,6 +818,12 @@ struct Canvas: NSViewRepresentable {
         decisionHandler(inline || local ? .allow : .cancel)
         return
       }
+      // An app-issued first load has a destination but no author document as its initiator.
+      if action.navigationType == .other, destination == initialDocument {
+        initialDocument = nil
+        decisionHandler(.allow)
+        return
+      }
       guard action.sourceFrame.isMainFrame, let url = action.request.url,
         url.scheme == "webbench", url.host == "project"
       else {
@@ -781,13 +839,13 @@ struct Canvas: NSViewRepresentable {
     ) {
       guard model.preview?.token == state.token, (error as NSError).code != NSURLErrorCancelled
       else { return }
-      model.status = error.localizedDescription
+      reportCanvasFailure(error.localizedDescription)
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
       guard state.token == model.preview?.token else { return }
       cancelBarriers()
       if model.writer === self { model.writer = nil }
-      model.status = "Preview stopped. Switch Edit / Run to reload your source."
+      reportCanvasFailure("The WebKit preview process stopped.")
 
     }
   }

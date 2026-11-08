@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Tracks the entire mouse gesture in the originating control, including travel across the WebKit view.
+/// The native control handles clicks and hands palette drags to AppKit.
 struct PaletteTile: NSViewRepresentable {
   let item: String
   let title: String
@@ -38,7 +38,8 @@ struct PaletteTile: NSViewRepresentable {
     tile.isEnabled = !model.running && !model.busy
   }
 
-  final class Tile: NSButton {
+  final class Tile: NSButton, NSDraggingSource {
+    static let partType = NSPasteboard.PasteboardType("com.greenshoegarage.webbench.palette-part")
     override func draw(_ dirtyRect: NSRect) {
       // PartCard draws the face. Retain a visible keyboard focus ring on the native control.
       if window?.firstResponder === self {
@@ -51,14 +52,7 @@ struct PaletteTile: NSViewRepresentable {
     weak var model: Session?
     var item = ""
     private var down: NSPoint?
-    private var dragging = false
     private var dragToken: String?
-    private var canvas: Canvas.Coordinator? {
-      guard let model, let dragToken, model.preview?.token == dragToken else { return nil }
-      let candidate = model.writing ? model.writer : model.designer
-      return candidate?.state.token == dragToken && candidate?.ready == true ? candidate : nil
-    }
-    private var monitor: Any?
     var insertionParent: ElementRow? {
       guard let model, !model.targetsPage, let parent = model.selectedContainer,
         parent.tag != "body",
@@ -89,50 +83,43 @@ struct PaletteTile: NSViewRepresentable {
       highlight(true)
     }
     override func mouseDragged(with event: NSEvent) {
-      guard let down, let model, let window else { return }
-      let p = event.locationInWindow
-      if !dragging {
-        guard hypot(p.x - down.x, p.y - down.y) >= 3 else { return }
-        dragging = true
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
-          if e.keyCode == 53, let self {
-            self.finish(cancel: true)
-            return nil
-          }
-          return e
-        }
+      guard let down, let token = dragToken,
+        hypot(event.locationInWindow.x - down.x, event.locationInWindow.y - down.y) >= 3
+      else { return }
+      self.down = nil
+      highlight(false)
+      let paste = NSPasteboardItem()
+      paste.setPropertyList(["token": token, "item": item], forType: Self.partType)
+      let part = NSDraggingItem(pasteboardWriter: paste)
+      let size = NSSize(width: max(88, (title as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13)]).width + 28), height: 32)
+      let label = title as NSString
+      let badge = NSImage(size: size, flipped: false) { rect in
+        NSColor(calibratedRed: 0.09, green: 0.30, blue: 0.23, alpha: 0.96).setFill()
+        NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8).fill()
+        label.draw(at: NSPoint(x: 12, y: 8), withAttributes: [
+          .font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: NSColor.white
+        ])
+        return true
       }
-      canvas?.palette(
-        item, phase: "hover", screen: window.convertPoint(toScreen: p),
-        snap: model.snap && !event.modifierFlags.contains(.option))
+      let pt = convert(event.locationInWindow, from: nil)
+      part.setDraggingFrame(NSRect(x: pt.x - 12, y: pt.y - 16, width: size.width, height: size.height), contents: badge)
+      beginDraggingSession(with: [part], event: event, source: self)
+    }
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+      context == .withinApplication ? .copy : []
+    }
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+      dragToken = nil
     }
     override func mouseUp(with event: NSEvent) {
       guard down != nil else { return }
-      if dragging, let window {
-        guard let canvas else {
-          model?.status = "The page changed or is still loading. Drag the part again."
-          finish(cancel: false)
-          return
-        }
-        canvas.palette(
-          item, phase: "drop", screen: window.convertPoint(toScreen: event.locationInWindow),
-          snap: model?.snap == true && !event.modifierFlags.contains(.option))
-      } else if bounds.contains(convert(event.locationInWindow, from: nil)) {
-        arm()
-      }
-      finish(cancel: false)
-    }
-    private func finish(cancel: Bool) {
-      if cancel { canvas?.palette(item, phase: "cancel", screen: .zero, snap: false) }
-      if let monitor { NSEvent.removeMonitor(monitor) }
-      monitor = nil
-      dragToken = nil
-      dragging = false
       down = nil
+      dragToken = nil
       highlight(false)
+      if bounds.contains(convert(event.locationInWindow, from: nil)) { arm() }
     }
     override func viewWillMove(toWindow newWindow: NSWindow?) {
-      if newWindow == nil { finish(cancel: true) }
+      if newWindow == nil { down = nil; dragToken = nil }
       super.viewWillMove(toWindow: newWindow)
     }
   }

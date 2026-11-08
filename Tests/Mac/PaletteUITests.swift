@@ -11,19 +11,13 @@ final class PaletteUITests: XCTestCase {
     defer { app.terminate() }
     let window = app.windows.firstMatch
     XCTAssertTrue(window.waitForExistence(timeout: 15))
-    let drafts = try XCTUnwrap(FileManager.default.urls(for: .applicationSupportDirectory,
-      in: .userDomainMask).first).appendingPathComponent("Green Shoe Garage/WebBench/Drafts")
+    let userHome = URL(fileURLWithPath: String(cString: getpwuid(getuid()).pointee.pw_dir))
+    let drafts = userHome.appendingPathComponent("Library/Application Support/Green Shoe Garage/WebBench/Drafts")
     func entries() -> Set<String> {
       Set((try? FileManager.default.contentsOfDirectory(atPath: drafts.path)) ?? [])
     }
     let before = entries()
     app.typeKey("n", modifierFlags: [.command])
-    let newDraft = NSPredicate { _, _ in !entries().subtracting(before).isEmpty }
-    XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: newDraft, object: nil)],
-                                  timeout: 12), .completed)
-    let name = try XCTUnwrap(entries().subtracting(before).first)
-    let page = drafts.appendingPathComponent(name).appendingPathComponent("index.html")
-    let original = try Data(contentsOf: page)
     let canvas = window.webViews.firstMatch
     XCTAssertTrue(canvas.waitForExistence(timeout: 15), app.debugDescription)
     let tile = window.buttons["insert-Button"]
@@ -41,6 +35,10 @@ final class PaletteUITests: XCTestCase {
       if guide.localizedCaseInsensitiveContains("first element") { break }
       Thread.sleep(forTimeInterval: 0.3)
     }
+    print("Canvas image text: " + guide)
+    let name = try XCTUnwrap(entries().subtracting(before).first, "New draft missing at " + drafts.path + "\n" + app.debugDescription)
+    let page = drafts.appendingPathComponent(name).appendingPathComponent("index.html")
+    let original = try Data(contentsOf: page)
     let shot = XCTAttachment(screenshot: canvas.screenshot())
     shot.name = "Blank Design canvas"
     add(shot)

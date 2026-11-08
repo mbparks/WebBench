@@ -619,6 +619,16 @@ struct WorkspaceView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background { WorkMat() }
       }.frame(minHeight: 90, maxHeight: .infinity)
+        .overlay {
+          if !m.canvasIssue.isEmpty {
+            VStack(spacing: 8) {
+              Text("Canvas could not load").font(.headline)
+              Text(m.canvasIssue).font(.callout).textSelection(.enabled)
+              Button("Reload canvas") { m.refresh() }
+            }
+            .padding().frame(maxWidth: 360).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+          }
+        }
     } else {
       VStack(spacing: 8) {
         Image(systemName: "chevron.left.forwardslash.chevron.right").font(.title2)

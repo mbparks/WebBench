@@ -134,6 +134,7 @@ final class Session: ObservableObject {
   @Published var status = "Open a page or site folder."
   @Published var preview: PreviewState?
   @Published var sourceIssue = ""
+  @Published var canvasIssue = ""
   @Published var property = "margin-top"
   @Published var width = 1280.0
   @Published var devicePlacement = false
@@ -533,6 +534,7 @@ final class Session: ObservableObject {
   }
   func render() {
     guard let site, let s = site.files[page]?.text, let engine else { return }
+    canvasIssue = ""
     let marker = "data-wb-" + UUID().uuidString.lowercased()
     do {
       let ix = try engine.call("info", [s, marker], as: IndexedPage.self)

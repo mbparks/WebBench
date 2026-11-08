@@ -12,12 +12,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build universal WebBench
         run: |
+          sw_vers
+          uname -m
           xcodebuild -version
           xcodebuild -project WebBench.xcodeproj -scheme WebBench -configuration Release -destination 'generic/platform=macOS' -derivedDataPath "$RUNNER_TEMP/product" ONLY_ACTIVE_ARCH=NO ARCHS="arm64 x86_64" CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/build.log" || { grep -E '(error:|warning:)' "$RUNNER_TEMP/build.log" | sort -u; exit 1; }
           app="$RUNNER_TEMP/product/Build/Products/Release/WebBench.app"
           codesign --force --sign - --options runtime "$app"
           codesign --verify --deep --strict "$app"
           lipo -archs "$app/Contents/MacOS/WebBench"
+          # UI automation launches the exact release bundle that goes into the download.
+          rm -rf WebBench.app
+          ditto "$app" WebBench.app
           ditto -c -k --keepParent "$app" "$RUNNER_TEMP/WebBench.zip"
       - uses: actions/upload-artifact@v4
         with:
@@ -32,4 +37,6 @@ jobs:
         if: always()
         with:
           name: native-placement-results
-          path: ${{ runner.temp }}/placement.log
+          path: |
+            ${{ runner.temp }}/placement.log
+            ${{ runner.temp }}/Placement.xcresult
