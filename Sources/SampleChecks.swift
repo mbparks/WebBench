@@ -504,6 +504,7 @@ final class SampleChecks: ObservableObject {
       "<html><body data-free-page data-design-canvas style='position:relative'><section id='panel'><div id='row' style='display:flex;padding:20px'><p>First</p></div><div id='empty'></div></section><!-- keep --><a href='#panel'>Jump</a></body></html>"
     try Data(html.utf8).write(to: url, options: .withoutOverwriting)
     enter(try Site.open(url))
+    editor.dropOnPage = false
     try await inspect("div#row")
     _ = try await js(
       "(()=>{const r=document.getElementById('row').getBoundingClientRect();webBenchPaletteDrag('Button','drop',(r.right-15)/innerWidth,(r.top+r.height/2)/innerHeight,false,false);return true})()"

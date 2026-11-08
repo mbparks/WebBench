@@ -1,5 +1,12 @@
 # Mac acceptance workflows
 
+## Canvas placement in 0.15.1
+
+1. Press Command-N. At Fit zoom, drag a star from Insert onto the page. With the star selected, click the Button tile, then click the center of the star. The button should appear over the star. Both should be direct children of the body in Layers.
+2. Drag the button away from the star, undo and redo. Scroll down, switch to 50% zoom and place a heading. Compare the ghost and final position, review the source diff, save and reopen in Safari.
+3. Choose **Container**. Drag a button into a flex row, then place another over an iframe inside a section. Check the target label before releasing and the resulting parent in Layers.
+4. On an existing page, select a positioned panel, then drag a positioned child inside a static wrapper in that panel. Check that only the child’s coordinates change.
+
 ## Snippets and embeds on macOS
 
 1. Open a disposable site folder with two HTML pages. Drag **Code snippet** into a section, enter `<button>A & B</button>` and insert. Confirm it displays literally, Undo restores the original bytes and Redo restores the snippet.
@@ -10,7 +17,7 @@
 ## Layout shapes on macOS
 
 1. Open a blank canvas and expand **Insert → Layout**. Search **Shapes** and check that 24 silhouettes are available. Search **arrow**, then drag a left arrow onto the canvas. Check that the hover outline and saved direction agree.
-2. Drag a star into a section and a heart into a flex row. Select each by clicking its filled area. Resize and recolor one, check the diff, then Undo and Redo. Verify the names in Layers.
+2. Choose **Container** for nesting on a free page. Drag a star into a section and a heart into a flex row. Select each by clicking its filled area. Resize and recolor one, check the diff, then Undo and Redo. Verify the names in Layers.
 3. Save and reopen, export the page, and open the export in Safari. Check the silhouettes and fills at desktop and phone widths. Confirm an untouched save has the same hash.
 
 ## Device Workbench on macOS

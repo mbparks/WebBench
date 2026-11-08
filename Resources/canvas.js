@@ -119,8 +119,9 @@
       if(s.transform!=='none'||['rotate','scale','translate','perspective'].some(p=>s[p] && s[p]!=='none')||
          (s.zoom && !['1','normal'].includes(s.zoom))) axisAligned=false;
     }
-    const canMove=axisAligned && cs.position==='absolute' && e.offsetParent===e.parentElement &&
-      e.offsetParent && getComputedStyle(e.offsetParent).position!=='static' && px(cs.left)&&px(cs.top);
+    // An absolute layer can be positioned by a grandparent or the initial containing block.
+    // Moving its authored left/top preserves any intermediate wrappers and their content.
+    const canMove=axisAligned && cs.position==='absolute' && e.offsetParent && px(cs.left)&&px(cs.top);
     const replaced=['img','input','button','textarea','select','video','canvas','iframe'].includes(e.localName);
     const inlineBox=cs.display==='inline' && !replaced;
     const num=v=>parseFloat(v)||0;
@@ -130,7 +131,7 @@
     const canResize=axisAligned && !/^(html|body|thead|tbody|tfoot|tr|col|option|script|style)$/.test(e.localName) &&
       !e.closest('svg,math') && !['contents','none'].includes(cs.display) && e.getClientRects().length>0;
     const parentStyle=e.parentElement && getComputedStyle(e.parentElement);
-    const canStack=canMove && (e.parentElement===document.documentElement || parentStyle.isolation==='isolate' ||
+    const canStack=canMove && e.offsetParent===e.parentElement && (e.parentElement===document.documentElement || parentStyle.isolation==='isolate' ||
       parentStyle.zIndex!=='auto' || Number(parentStyle.opacity)<1 || ['sticky','fixed'].includes(parentStyle.position));
     const canLift=canResize && ['static','relative'].includes(cs.position) && e.parentElement &&
       canMap(e.parentElement) && parentStyle.position!=='static' && !e.matches('table,tbody,thead,tfoot,tr,td,th');
@@ -310,7 +311,7 @@
     const item=ev.dataTransfer.getData('text/plain');if(item.startsWith('WebBench:'))post('drop',{...where,item:item.slice(9)});
   },true);
   function toolDestination(ev) {
-    const target=document.elementFromPoint?.(ev.clientX,ev.clientY)||ev.target;
+    const target=LayoutDrop.hit(ev.clientX,ev.clientY)||ev.target;
     const item=ev.dataTransfer?.getData?.('text/plain')?.replace(/^WebBench:/,'') || tool;
     const parts=item.split('/');
     const row=parts[0]==='Node' && parts[1]===WB.token ? WB.tree[Number(parts[2])] : null;
@@ -516,8 +517,7 @@
     if(ev.target===chrome||tool)return;
     let e=ev.target.closest?.('['+marker+']');
     if(members.length>1 && members.some(m=>m.contains(e))){groupDrag(ev);return;}
-    if(selected?.contains(e) && frameOf(selected).canMove)e=selected;
-    else while(e && (!canMap(e)||!frameOf(e).canMove))e=e.parentElement?.closest('['+marker+']');
+    while(e && !movable(e))e=e.parentElement?.closest('['+marker+']');
     if(e){begin(ev,e,'move');return;}
     const leaf=ev.target.closest?.('['+marker+']');
     const flow=leaf && /^(span|em|strong|b|i|small|sup|sub)$/.test(leaf.localName)
@@ -542,7 +542,7 @@
       if(!m.active){setMembers([m.element]);try{m.element.setPointerCapture(ev.pointerId);}catch{}}
       m.active=true;ev.preventDefault();window.getSelection?.()?.removeAllRanges();
       LayoutDrop.clear();
-      const d=LayoutDrop.locate(document.elementFromPoint(ev.clientX,ev.clientY),ev.clientX,ev.clientY,free,m.element,m.element.localName);
+      const d=LayoutDrop.locate(LayoutDrop.hit(ev.clientX,ev.clientY),ev.clientX,ev.clientY,free,m.element,m.element.localName);
       if(d)LayoutDrop.show(d,null,ev.clientX,ev.clientY);
       return;
     }
@@ -582,7 +582,7 @@
       cancelGesture();
       if(!m.active)return;
       ev.preventDefault();ignoreClick=true;setTimeout(()=>{ignoreClick=false;},0);
-      const d=LayoutDrop.locate(document.elementFromPoint(ev.clientX,ev.clientY),ev.clientX,ev.clientY,free,m.element,m.element.localName);
+      const d=LayoutDrop.locate(LayoutDrop.hit(ev.clientX,ev.clientY),ev.clientX,ev.clientY,free,m.element,m.element.localName);
       if(d)post('flowDrop',{id:d.id,child:m.id,before:d.before,point:d.point||null,scroll:[scrollX,scrollY]});
       return;
     }

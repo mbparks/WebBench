@@ -52,10 +52,15 @@ struct PaletteTile: NSViewRepresentable {
     var item = ""
     private var down: NSPoint?
     private var dragging = false
-    private weak var canvas: Canvas.Coordinator?
+    private var dragToken: String?
+    private var canvas: Canvas.Coordinator? {
+      guard let model, let dragToken, model.preview?.token == dragToken else { return nil }
+      let candidate = model.writing ? model.writer : model.designer
+      return candidate?.state.token == dragToken && candidate?.ready == true ? candidate : nil
+    }
     private var monitor: Any?
     var insertionParent: ElementRow? {
-      guard let model, !model.dropOnPage, let parent = model.selectedContainer,
+      guard let model, !model.targetsPage, let parent = model.selectedContainer,
         parent.tag != "body",
         let entry = model.elements.first(where: { $0.id == item }),
         model.accepts(entry.tag, in: parent)
@@ -79,6 +84,7 @@ struct PaletteTile: NSViewRepresentable {
     }
     override func mouseDown(with event: NSEvent) {
       guard isEnabled else { return }
+      dragToken = model?.preview?.token
       down = event.locationInWindow
       highlight(true)
     }
@@ -87,8 +93,6 @@ struct PaletteTile: NSViewRepresentable {
       let p = event.locationInWindow
       if !dragging {
         guard hypot(p.x - down.x, p.y - down.y) >= 3 else { return }
-        canvas = model.writing ? model.writer : model.designer
-        guard canvas?.ready == true else { return }
         dragging = true
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
           if e.keyCode == 53, let self {
@@ -105,7 +109,12 @@ struct PaletteTile: NSViewRepresentable {
     override func mouseUp(with event: NSEvent) {
       guard down != nil else { return }
       if dragging, let window {
-        canvas?.palette(
+        guard let canvas else {
+          model?.status = "The page changed or is still loading. Drag the part again."
+          finish(cancel: false)
+          return
+        }
+        canvas.palette(
           item, phase: "drop", screen: window.convertPoint(toScreen: event.locationInWindow),
           snap: model?.snap == true && !event.modifierFlags.contains(.option))
       } else if bounds.contains(convert(event.locationInWindow, from: nil)) {
@@ -117,7 +126,7 @@ struct PaletteTile: NSViewRepresentable {
       if cancel { canvas?.palette(item, phase: "cancel", screen: .zero, snap: false) }
       if let monitor { NSEvent.removeMonitor(monitor) }
       monitor = nil
-      canvas = nil
+      dragToken = nil
       dragging = false
       down = nil
       highlight(false)

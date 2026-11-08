@@ -397,7 +397,7 @@ struct WorkspaceView: View {
           }.pickerStyle(.segmented).padding(.horizontal, 10)
             .help("Container nests the element. Page canvas places it freely over the page.")
         }
-        if let parent = m.selectedContainer, parent.tag != "body", !m.dropOnPage {
+        if let parent = m.selectedContainer, parent.tag != "body", !m.targetsPage {
           Text("Click to add inside " + parent.label + ", or drag to place.").font(.caption)
             .padding(.horizontal, 10)
         }

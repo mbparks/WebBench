@@ -79,6 +79,42 @@ final class WebBenchMacTests: XCTestCase {
     XCTAssertFalse(model.currentText.contains("data-webbench-devices"))
   }
 
+  func testFreeCanvasTileArmsOverSelectionAndContainerModeInsertsInside() throws {
+    let original = "<html><body data-free-page style='position:relative'><section id='panel'></section></body></html>"
+    let model = session(original)
+    let section = try XCTUnwrap(model.nodes.first { $0.tag == "section" })
+    model.select(section.id)
+    let tile = PaletteTile.Tile(title: "Button", target: nil, action: nil)
+    tile.model = model
+    tile.item = "Button"
+    XCTAssertTrue(model.targetsPage)
+    XCTAssertFalse(model.supportsDevicePlacement)
+    tile.arm()
+    XCTAssertEqual(model.insertTool, "Button")
+    XCTAssertEqual(model.currentText, original)
+    let page = try XCTUnwrap(model.nodes.first { $0.tag == "body" })
+    model.history.groupsByEvent = false
+    model.history.beginUndoGrouping()
+    model.insertFromCanvas(["id": page.id, "item": "Button", "point": ["x": 96, "y": 72]], armed: true)
+    model.history.endUndoGrouping()
+    XCTAssertTrue(model.currentText.contains("left: 96px; top: 72px"))
+    XCTAssertTrue(model.nodes.contains { $0.tag == "button" && $0.parent == page.id })
+    let edited = model.currentText
+    model.undo()
+    XCTAssertEqual(model.currentText, original)
+    model.redo()
+    XCTAssertEqual(model.currentText, edited)
+    model.select(section.id)
+    model.dropOnPage = false
+    model.history.beginUndoGrouping()
+    tile.arm()
+    model.history.endUndoGrouping()
+    XCTAssertTrue(model.nodes.contains { $0.tag == "button" && $0.parent == section.id })
+    model.undo()
+    XCTAssertEqual(model.currentText, edited)
+    XCTAssertFalse(session("<html><body><section></section></body></html>").targetsPage)
+  }
+
   func testSnippetInsertReopenEditAndUndo() throws {
     let original = "<html><body><section><!-- keep --></section></body></html>"
     let model = session(original)

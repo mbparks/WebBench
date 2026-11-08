@@ -12,7 +12,7 @@ const LayoutDrop = (() => {
     }
     return true;
   }
-  let dropOnPage=false;
+  let dropOnPage=Boolean(document.body?.hasAttribute('data-free-page'));
   window.webBenchDropOnPage=value=>{ dropOnPage=Boolean(value); };
   function locate(hit,x,y,free,skip=null,tag='div') {
     let e=hit?.closest?.('['+marker+']');
@@ -100,7 +100,9 @@ const LayoutDrop = (() => {
     caption.textContent='Inside '+name(d.parent)+(d.beforeEl?' · before '+name(d.beforeEl):d.point?' · free placement':' · at end');
     Object.assign(caption.style,{left:Math.max(0,Math.min(x+9,innerWidth-150))+'px',top:Math.max(0,y-28)+'px'});
   }
-  function hit(x,y){return document.elementFromPoint(x,y);}
+  function hit(x,y) {
+    return window.webBenchHitAt ? window.webBenchHitAt(x,y) : document.elementFromPoint(x,y);
+  }
   window.webBenchPaletteDrag=(item,phase,u,v,free,snap)=>{
     clear();
     if(phase==='cancel'||u<0||v<0||u>=1||v>=1)return;
@@ -144,5 +146,5 @@ const LayoutDrop = (() => {
     reader.onerror = () => send('notice',{message:'The photo could not be read. Choose it again.'});
     reader.readAsDataURL(file);
   }
-  return {locate,clear,show,photo};
+  return {locate,clear,show,photo,hit};
 })();

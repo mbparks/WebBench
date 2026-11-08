@@ -47,6 +47,7 @@ with TemporaryDirectory() as folder, sync_playwright() as pw:
     def place(item,target,parent,click=False):
         global draft
         rows=render(); x,y=coords(target)
+        canvas.evaluate("webBenchDropOnPage(false)")
         if click:
             canvas.evaluate("item=>webBenchTools(item,false)",item)
             canvas.mouse.click(x,y)

@@ -44,7 +44,7 @@ Direct flow moves hit-test under the pointer independently of pointer capture. R
 
 ## Free page and publication
 
-New drafts start from canvas-page.html with a positioned body. The default drop mode walks up from the hit element to the nearest mapped, compatible container. Flow, Flexbox and Grid use a sibling insertion point. Positioned design containers can supply local coordinates. On a free page the explicit Page canvas option places overlapping siblings in body. The studio.html starter includes an embedded photograph and responsive CSS.
+New drafts start from canvas-page.html with a positioned body. On a body marked data-free-page, the default drop target is the page itself. Container mode and ordinary flow pages walk up from the hit element to the nearest mapped, compatible container. Flow, Flexbox and Grid use a sibling insertion point. Positioned design containers can supply local coordinates. The iframe hit test temporarily restores pointer targeting to identify the visible frame and its actual parent. The studio.html starter includes an embedded photograph and responsive CSS.
 
 The Insert catalog in source.js supplies native tile metadata, child-parent rules, preview markup and source insertions. LayerOrder.swift calculates before, inside and after destinations for both the native drop delegate and keyboard commands. The drag carries a local pasteboard type, render token and source identity. The source engine validates containment, verifies the re-indexed destination and moves the authored subtree. A stale drop cannot apply to the next page or revision. Audio and video elements use the project's local URL scheme with byte-range responses for seeking.
 

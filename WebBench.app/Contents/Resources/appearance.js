@@ -10,18 +10,20 @@
     const shield=document.createElement('style');
     shield.textContent=selector+'{pointer-events:none!important}';
     document.head.append(shield);
+    window.webBenchHitAt=(x,y)=>{
+      const overFrame=frames.some(frame=>{
+        const rect=frame.getBoundingClientRect();
+        return x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom;
+      });
+      if(!overFrame) return document.elementFromPoint(x,y);
+      shield.sheet.disabled=true;
+      try { return document.elementFromPoint(x,y); }
+      finally { shield.sheet.disabled=false; }
+    };
     for (const type of ['pointerdown','pointerup','pointermove','click','dblclick','contextmenu']) {
       window.addEventListener(type,event=>{
-        if(!event.isTrusted || event.target.closest?.(selector)) return;
-        const {clientX:x,clientY:y}=event;
-        if(!frames.some(frame=>{
-          const rect=frame.getBoundingClientRect();
-          return x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom;
-        })) return;
-        shield.sheet.disabled=true;
-        let frame;
-        try { frame=document.elementFromPoint(x,y); }
-        finally { shield.sheet.disabled=false; }
+        if(!event.isTrusted || event.target.closest?.(selector) || (type.startsWith('pointer') && event.target.hasPointerCapture?.(event.pointerId))) return;
+        const frame=window.webBenchHitAt(event.clientX,event.clientY);
         if(!frame?.matches(selector)) return;
         event.preventDefault();
         event.stopImmediatePropagation();

@@ -1,15 +1,21 @@
-WebBench 0.15.0 · Green Shoe Garage
+WebBench 0.15.1 · Green Shoe Garage
 Universal Mac app and source repository · macOS 15 or later
 
 OPEN WEBBENCH
 Extract the ZIP in Finder, open the WebBench folder and double-click
-WebBench.app. It is the universal v0.15.0 developer preview for Apple silicon
+WebBench.app. It is the universal v0.15.1 developer preview for Apple silicon
 and Intel. You can also copy it to Applications. If macOS declines the
 ad-hoc signed preview, use the local build instructions below.
 It starts with an empty page and the Insert palette. Command-N makes another
 free canvas. Expand or collapse the trays in Insert, or search all 80 parts.
 File > New Studio Portfolio opens a designed page with an embedded
 field-recorder photograph that you can replace.
+
+PLACE AN ELEMENT
+Drag a part from Insert and release it where you want it. You can also
+click a tile and then click the spot on the page. New and reopened free
+canvases start in Page canvas mode, so parts can overlap. Choose Container
+above the palette to put the next part inside an existing layout.
 
 ADD CODE OR AN IFRAME
 Open Insert > Code & embeds. Drag Code snippet to display literal code or
@@ -60,7 +66,8 @@ handlers you can reopen and edit. Upload needs a receiving server. Test
 upload rehearses the file selection locally in the offline preview.
 
 BUILD A SECTION AND TRY LAYERS
-1. Drag Section from Insert onto the blank page. Drag Button onto the middle
+1. Drag Section from Insert onto the blank page. Choose Container above the
+   palette to nest the next part. Drag Button onto the middle
    of the section. Check the destination label, then release. Double-click
    the button text to rename it. Press Escape to finish.
 2. In Layers, select the section. Choose Add inside > Layout > Container.

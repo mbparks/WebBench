@@ -48,7 +48,7 @@ final class Session: ObservableObject {
   @Published var writing = false
   @Published var snap = true
   @Published var gridVisible = true
-  @Published var dropOnPage = false
+  @Published var dropOnPage = true
   let elements: [InsertElement]
   let layerParents: [String: [String]]
   var paletteGroups: [String] {
@@ -137,7 +137,11 @@ final class Session: ObservableObject {
   @Published var property = "margin-top"
   @Published var width = 1280.0
   @Published var devicePlacement = false
-  var hasFreePage: Bool { nodes.contains { $0.label == "style#webbench-layout" } }
+  var hasFreePage: Bool { nodes.contains { $0.freeCanvas == true } }
+  var targetsPage: Bool { hasFreePage && dropOnPage }
+  var supportsDevicePlacement: Bool {
+    hasFreePage && nodes.contains { $0.label == "style#webbench-layout" }
+  }
   var band: String { width <= 600 ? "phone" : width <= 1024 ? "tablet" : "desktop" }
   @Published var deviceHeight = 800.0
   @Published var device = "Desktop"
@@ -471,7 +475,7 @@ final class Session: ObservableObject {
       return
     }
     insertTool = ""
-    dropOnPage = false
+    dropOnPage = true
     writeTarget = nil
     writingFormat = WritingFormat()
     writingCaret = nil
@@ -815,7 +819,7 @@ final class Session: ObservableObject {
       status = "Choose an absolute child of an explicitly positioned parent."
       return
     }
-    if devicePlacement && hasFreePage {
+    if devicePlacement && supportsDevicePlacement {
       requestFrame(["left": Int((i.x + dx).rounded()), "top": Int((i.y + dy).rounded())])
       return
     }

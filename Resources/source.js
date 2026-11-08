@@ -383,6 +383,7 @@ const WebBench = (() => {
         (n.tag==='iframe' ? n.attrs.title?.value || 'Iframe embed' : n.attrs['data-html-snippet'] ? 'Custom HTML' : '') ||
         shapeNames.get(n.attrs.class?.value.trim().split(/\s+/).find(name => shapeNames.has(name))) ||
         (/^(h[1-6]|p|a|button|label|li|output)$/.test(n.tag) ? s.slice(n.open,Math.min(n.close,n.open+55)).split('<')[0].trim() : '') || n.tag),
+      ...(n.tag==='body' && n.attrs['data-free-page'] ? {freeCanvas:true} : {}),
       ...(snippetKind(n) ? {snippet:snippetKind(n)} : {}),start:n.start,length:n.open-n.start}))};
   }
   function attribute(s,n,key,value) {

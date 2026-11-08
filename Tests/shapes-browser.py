@@ -68,6 +68,7 @@ with TemporaryDirectory() as folder, sync_playwright() as pw:
         return canvas.evaluate("k=>messages.filter(m=>m.kind===k).at(-1)",kind)
     def drag(text,part,x,y,parent,cancel=False):
         render(text)
+        canvas.evaluate("on=>webBenchDropOnPage(on)",parent=="body")
         args=[part,x/800,y/640]
         canvas.evaluate("([i,x,y])=>webBenchPaletteDrag(i,'hover',x,y,true,false)",args)
         ghost=canvas.locator(parent+" > [inert]")

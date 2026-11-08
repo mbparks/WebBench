@@ -380,7 +380,7 @@ struct Canvas: NSViewRepresentable {
     }
     func sync() {
       guard ready, !state.run, model.safeToEdit, model.preview?.token == state.token else { return }
-      let pageDrop = model.hasFreePage && model.dropOnPage
+      let pageDrop = model.targetsPage
       if lastPageDrop != pageDrop {
         lastPageDrop = pageDrop
         evaluate("webBenchDropOnPage", [pageDrop])
@@ -396,7 +396,7 @@ struct Canvas: NSViewRepresentable {
         lastGrid = grid
         evaluate("webBenchGrid", [grid])
       }
-      let scoped = model.hasFreePage && model.devicePlacement
+      let scoped = model.supportsDevicePlacement && model.devicePlacement
       if lastScope != scoped {
         lastScope = scoped
         evaluate("webBenchVariant", [scoped])

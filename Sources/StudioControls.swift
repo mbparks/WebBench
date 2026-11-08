@@ -61,7 +61,7 @@ struct StudioControls: View {
         customDevice = true
       }.fixedSize().font(.caption.monospacedDigit()).help("Set or scrub the preview width")
       Spacer(minLength: 0)
-      if model.hasFreePage && !model.running && !model.writing {
+      if model.supportsDevicePlacement && !model.running && !model.writing {
         Menu {
           Button("At all widths") { model.devicePlacement = false }
           Button("Only this breakpoint") { model.devicePlacement = true }

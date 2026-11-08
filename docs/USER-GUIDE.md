@@ -107,7 +107,7 @@ WebBench writes a short configuration comment and JavaScript into one ordinary s
 
 ## Build inside containers and rearrange Layers
 
-Drag **Button** into the middle of an existing section or div. The label identifies its parent and the insertion point before you release. Flex rows and grids keep their layout. For an empty, covered or zero-height container, select its **Layers** row and choose **Add inside → Essentials → Button**. You can also select the container, switch to Insert, and click a compatible tile. On a free page, **Container** is the default drop mode. Choose **Page canvas** when you want an independent object over an existing section.
+For a free page, choose **Container** above Insert. Drag **Button** into the middle of an existing section or div. The label identifies its parent and the insertion point before you release. Flex rows and grids keep their layout. For an empty, covered or zero-height container, select its **Layers** row and choose **Add inside → Essentials → Button**. You can also select the container, switch to Insert, and click a compatible tile. Free pages open in **Page canvas** mode. In that mode, clicking a tile arms the tool and clicking the paper places an independent object, including over an existing selection.
 
 In Layers, drag a row to the top or bottom edge of another row to move it before or after that element. Drop on the highlighted middle of a compatible row to nest it. A moved section carries its contents. With a single layer selected, **Option-Command-Up/Down** changes sibling order. **Option-Command-Right** nests it in the preceding compatible sibling, and **Option-Command-Left** moves it out one level. The same actions are available from the buttons above the tree and its context menu.
 

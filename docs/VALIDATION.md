@@ -1,6 +1,14 @@
-# WebBench 0.15.0 validation
+# WebBench 0.15.1 validation
 
-**Mac workflows exercised for this release on this host: zero.** This build ran on Linux with an Apple macOS 15.2 SDK, a Swift cross-toolchain and headless Chromium 157.0.8103.38. The macOS target and browser engine matter here. The browser fixtures exercise the actual canvas scripts with a test bridge, and the Layers tests call the production Swift destination planner. AppKit event delivery, SwiftUI row dragging, WKWebView and Safari require a Mac.
+**Native macOS workflows exercised for this build: zero.** The universal app was cross-built with Swift 6.0.3 and the macOS 15.2 SDK. AppKit mouse delivery, the macOS WKWebView bridge, native Undo/Redo and independent Safari acceptance still need a Mac.
+
+## Canvas placement
+
+With the 0.15.0 resources, Linux WebKit reproduced three failures. The button ghost nested inside a clipped star. Dragging a wrapped child moved the selected parent panel. A drop over an iframe targeted content underneath its placeholder.
+
+With the 0.15.1 resources, the placement fixture passed in WebKit 26.5 and Chromium 157.0.8103.38. It exercised hover and cancel, palette release, click-to-place over the star, dragging the button, placing after scrolling, explicit Flexbox insertion, targeting a covered iframe and moving the child without changing its parent. The production Swift store saved and reopened the UTF-8 BOM/CRLF page. An independent file-URL render verified the final positions. The WebKit fixture also passed with the browser engine’s page zoom set to 50%.
+
+The browser tests use the production canvas scripts and a test message bridge. A macOS-hosted XCTest covers palette tile activation, page and container targeting, the native edit and Undo/Redo. It was syntax-checked here. See [Mac acceptance](ACCEPTANCE.md) for the physical pointer and Safari workflows.
 
 ## Snippets and embeds
 
@@ -109,6 +117,7 @@ The browser fixtures require Python with Playwright, a compatible Chromium execu
     python3 Tests/shapes-browser.py
     python3 Tests/workflow-values-browser.py
     python3 Tests/interactions-browser.py
+    WB_BROWSERS=webkit,chromium python3 Tests/placement-browser.py
     python3 Tests/studio-guide.py
     python3 Tests/layers-browser.py
     python3 Tests/browser_fixtures.py

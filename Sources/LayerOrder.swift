@@ -4,6 +4,7 @@ struct ElementRow: Identifiable, Decodable {
   let id: Int, parent: Int, depth: Int, tag: String, label: String, name: String, start: Int,
     length: Int
   var snippet: String?
+  var freeCanvas: Bool?
 }
 extension ElementRow {
   static func visible(_ rows: [ElementRow], folding folded: Set<Int>) -> [ElementRow] {
