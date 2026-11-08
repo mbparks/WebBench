@@ -1,9 +1,8 @@
 name: Native canvas placement
 on:
-  push:
-    branches: [fix/native-palette-preview]
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   mac:
     runs-on: macos-15
@@ -38,12 +37,6 @@ jobs:
           swift test --scratch-path "$RUNNER_TEMP/Storage"
           node --test Tests/*.test.cjs
           node Tests/roundtrip.cjs
-      - name: Include the tested app on the repair branch
-        if: github.ref == 'refs/heads/fix/native-palette-preview' && contains(github.event.head_commit.message, '[bundle]')
-        run: |
-          git add -f WebBench.app
-          git -c user.name="WebBench build" -c user.email="build@users.noreply.github.com" commit -m "Include the macOS-tested universal WebBench.app [skip ci]"
-          git push origin HEAD:refs/heads/fix/native-palette-preview
       - name: Run the disposable acceptance projects
         if: always()
         run: |

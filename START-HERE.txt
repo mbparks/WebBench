@@ -1,18 +1,20 @@
-WebBench 0.15.1 · Green Shoe Garage
+WebBench 0.15.2 · Green Shoe Garage
 Universal Mac app and source repository · macOS 15 or later
 
 OPEN WEBBENCH
 Extract the ZIP in Finder, open the WebBench folder and double-click
-WebBench.app. It is the universal v0.15.1 developer preview for Apple silicon
+WebBench.app. It is the universal v0.15.2 developer preview for Apple silicon
 and Intel. You can also copy it to Applications. If macOS declines the
 ad-hoc signed preview, use the local build instructions below.
 It starts with an empty page and the Insert palette. Command-N makes another
-free canvas. Expand or collapse the trays in Insert, or search all 80 parts.
+free canvas. File > New Site Folder also starts on blank paper and creates
+index.html, css/site.css, js/site.js and an assets folder. Expand or collapse the trays in Insert, or search all 80 parts.
 File > New Studio Portfolio opens a designed page with an embedded
 field-recorder photograph that you can replace.
 
 PLACE AN ELEMENT
-Drag a part from Insert and release it where you want it. You can also
+Drag Button from Insert. Its label follows the pointer. Release it when
+the canvas outline is where you want it. You can also
 click a tile and then click the spot on the page. New and reopened free
 canvases start in Page canvas mode, so parts can overlap. Choose Container
 above the palette to put the next part inside an existing layout.
@@ -117,5 +119,5 @@ Group 14 edits the power meter, checks Undo/Redo and tests both branches
 in WebKit after saving and reopening. Group 13 inserts into nested flex, moves a layer into an empty container,
 undoes and redoes, adds a disclosure, saves and reopens. The checks window
 can also open the Field Instrument in Safari and record your observation.
-Physical Mac input, native launch and independent Safari verification are
-pending for this build. See docs/ACCEPTANCE.md and docs/VALIDATION.md.
+The packaged app was launched and an automated pointer drag was checked
+on an Apple silicon Mac. Manual trackpad use and Safari are pending. See docs/ACCEPTANCE.md and docs/VALIDATION.md.
