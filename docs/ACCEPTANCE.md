@@ -1,8 +1,8 @@
 # Mac acceptance workflows
 
-## Canvas placement in 0.15.1
+## Canvas placement in 0.15.2
 
-1. Press Command-N. At Fit zoom, drag a star from Insert onto the page. With the star selected, click the Button tile, then click the center of the star. The button should appear over the star. Both should be direct children of the body in Layers.
+1. Check both Command-N and File → New Site Folder. Each should show the first-element artwork. At Fit zoom, drag a star from Insert onto the page. With the star selected, click the Button tile, then click the center of the star. The button should appear over the star. Both should be direct children of the body in Layers.
 2. Drag the button away from the star, undo and redo. Scroll down, switch to 50% zoom and place a heading. Compare the ghost and final position, review the source diff, save and reopen in Safari.
 3. Choose **Container**. Drag a button into a flex row, then place another over an iframe inside a section. Check the target label before releasing and the resulting parent in Layers.
 4. On an existing page, select a positioned panel, then drag a positioned child inside a static wrapper in that panel. Check that only the child’s coordinates change.
