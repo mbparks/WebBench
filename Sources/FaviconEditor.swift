@@ -28,6 +28,7 @@ extension IconBitmap {
     return data as Data
   }
   static func load(_ data: Data, preferred: Int, preserveSize: Bool) throws -> IconBitmap {
+    guard sizes.contains(preferred) else { throw BenchError("Choose a supported favicon grid size.") }
     guard !data.isEmpty, data.count <= 12 * 1024 * 1024 else {
       throw BenchError("Choose an image under 12 MiB.")
     }

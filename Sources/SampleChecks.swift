@@ -582,11 +582,12 @@ final class SampleChecks: ObservableObject {
     recipe.border = .print
     recipe.borderRGB = 0x285544
     let result = try PhotoRender.render(job, recipe: recipe, codec: .png, quality: 0.84)
-    let bitmap = try IconBitmap.load(result.bytes, preferred: 128, preserveSize: true)
+    let bitmap = try IconBitmap.load(result.bytes, preferred: 64, preserveSize: false)
     try require(
       bitmap.pixels[0] == 0x2855_44ff && result.image.width == 128 && result.image.height == 128,
       "The crop or frame differs from the requested output.")
-    let center = bitmap.pixels[64 * 128 + 64]
+    let midpoint = bitmap.size / 2
+    let center = bitmap.pixels[midpoint * bitmap.size + midpoint]
     try require(
       center >> 24 == (center >> 16) & 255 && center >> 24 == (center >> 8) & 255,
       "The center of the photo is not monochrome.")

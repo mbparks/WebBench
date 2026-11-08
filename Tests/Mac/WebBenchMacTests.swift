@@ -316,6 +316,7 @@ final class WebBenchMacTests: XCTestCase {
     checks.host = host
     defer { win.orderOut(nil) }
     await checks.run()
+    print(checks.report)
     XCTAssertEqual(checks.results.count, 14, checks.report)
     XCTAssertTrue(checks.results.allSatisfy { $0.hasPrefix("PASS ·") }, checks.report)
     XCTAssertEqual(try String(contentsOf: checks.reportURL, encoding: .utf8), checks.report)
